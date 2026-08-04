@@ -344,7 +344,7 @@ func runReverseArtifacts(ctx context.Context, dryRun, yes bool, cwd string, cmd 
 		return nil
 	}
 	// Detect which command was invoked from Use.
-	use := cmd.Root().Use
+	use := cmd.Name()
 	switch use {
 	case "oc-skills":
 		skills, err := opencode.ReadGlobalSkills()

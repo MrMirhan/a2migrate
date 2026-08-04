@@ -10,6 +10,7 @@ import (
 	"github.com/mirhan/a2migrate/internal/domain"
 	"github.com/mirhan/a2migrate/internal/migrate"
 	"github.com/mirhan/a2migrate/internal/source/claudecode"
+	ocsrc "github.com/mirhan/a2migrate/internal/source/opencode"
 	"github.com/mirhan/a2migrate/internal/target/opencode"
 )
 
@@ -196,8 +197,19 @@ func newReverseCmd() *cobra.Command {
 			if !yes && !dryRun {
 				fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
 			}
-			if err := runReverseArtifacts(cmd.Context(), dryRun, yes, cwd, cmd); err != nil {
-				return err
+			if !dryRun {
+				if err := runReverseArtifactsForDomain(cmd.Context(), "oc-skills", yes, cwd, cmd); err != nil {
+					return err
+				}
+				if err := runReverseArtifactsForDomain(cmd.Context(), "oc-commands", yes, cwd, cmd); err != nil {
+					return err
+				}
+				if err := runReverseArtifactsForDomain(cmd.Context(), "oc-agents", yes, cwd, cmd); err != nil {
+					return err
+				}
+				if err := runReverseArtifactsForDomain(cmd.Context(), "oc-rules", yes, cwd, cmd); err != nil {
+					return err
+				}
 			}
 			if err := runReverseMCP(cmd.Context(), dryRun, yes, resolveCCHome(to), cmd); err != nil {
 				return err
@@ -236,6 +248,78 @@ func newReverseCmd() *cobra.Command {
 	f.StringSliceVar(&excludes, "exclude", nil, "Skip sessions whose OC id matches")
 	f.StringVar(&search, "search", "", "Substring filter on id or title")
 	return c
+}
+
+// runReverseArtifactsForDomain is a copy of runReverseArtifacts that
+// takes the domain as an explicit string so the reverse meta command can
+// invoke each one. The original runReverseArtifacts infers the domain
+// from cmd.Name(), which doesn't work when called from a different
+// command.
+func runReverseArtifactsForDomain(ctx context.Context, domain string, yes bool, cwd string, cmd *cobra.Command) error {
+	if !yes {
+		fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
+	}
+	switch domain {
+	case "oc-skills":
+		skills, err := ocsrc.ReadGlobalSkills()
+		if err != nil {
+			return err
+		}
+		if p, err := ocsrc.ReadProjectSkills(cwd); err == nil {
+			skills = append(skills, p...)
+		}
+		w := platformOpen().SkillWriterFor(cwd)
+		written, err := w.WriteGlobal(skills)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "skills: %d\n", len(written))
+	case "oc-commands":
+		cmds, err := ocsrc.ReadGlobalCommands()
+		if err != nil {
+			return err
+		}
+		if p, err := ocsrc.ReadProjectCommands(cwd); err == nil {
+			cmds = append(cmds, p...)
+		}
+		w := platformOpen().CommandWriterFor(cwd)
+		written, err := w.WriteGlobal(cmds)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "commands: %d\n", len(written))
+	case "oc-agents":
+		agents, err := ocsrc.ReadGlobalAgents()
+		if err != nil {
+			return err
+		}
+		if p, err := ocsrc.ReadProjectAgents(cwd); err == nil {
+			agents = append(agents, p...)
+		}
+		w := platformOpen().AgentWriterFor(cwd)
+		written, err := w.WriteGlobal(agents)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "agents: %d\n", len(written))
+	case "oc-rules":
+		rules, err := ocsrc.ReadGlobalRules()
+		if err != nil {
+			return err
+		}
+		if p, err := ocsrc.ReadProjectRules(cwd); err == nil {
+			rules = append(rules, p...)
+		}
+		w := platformOpen().RuleWriterFor(cwd)
+		written, err := w.WriteGlobal(rules)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "rules: %d\n", len(written))
+	default:
+		return fmt.Errorf("unknown domain: %s", domain)
+	}
+	return nil
 }
 
 func runArtifacts(_ context.Context, m migrate.ArtifactsMigrator, cmd *cobra.Command) error {
