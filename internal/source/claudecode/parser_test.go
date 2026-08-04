@@ -131,6 +131,40 @@ func TestParseTimestamp(t *testing.T) {
 	}
 }
 
+func TestParseSession_UsageBlock(t *testing.T) {
+	sess, err := NewSessionReader("").ParseSession(filepath.Join("testdata", "with-usage.jsonl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var asst *domain.Message
+	for i := range sess.Messages {
+		if sess.Messages[i].Role == domain.RoleAssistant {
+			asst = &sess.Messages[i]
+		}
+	}
+	if asst == nil {
+		t.Fatal("no assistant message")
+	}
+	if asst.Tokens.Input != 120 {
+		t.Errorf("input = %d want 120", asst.Tokens.Input)
+	}
+	if asst.Tokens.Output != 42 {
+		t.Errorf("output = %d want 42", asst.Tokens.Output)
+	}
+	if asst.Tokens.CacheRead != 200000 {
+		t.Errorf("cache_read = %d want 200000", asst.Tokens.CacheRead)
+	}
+	if asst.Tokens.CacheWrite != 5000 {
+		t.Errorf("cache_write = %d want 5000", asst.Tokens.CacheWrite)
+	}
+	if asst.Tokens.ServiceTier != "standard" {
+		t.Errorf("service_tier = %q", asst.Tokens.ServiceTier)
+	}
+	if asst.ModelID != "claude-opus-4-5" {
+		t.Errorf("model = %q", asst.ModelID)
+	}
+}
+
 func TestFrontmatter_ParseAndStrip(t *testing.T) {
 	src := "---\nname: foo\ndescription: hi\n---\nbody line 1\nbody line 2\n"
 	fm, err := ParseFrontmatter(src)

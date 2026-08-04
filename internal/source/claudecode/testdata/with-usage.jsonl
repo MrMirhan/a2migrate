@@ -1,0 +1,2 @@
+{"type":"user","uuid":"u1","parentUuid":null,"sessionId":"s5","timestamp":"2026-07-20T10:00:00Z","cwd":"/tmp/proj","message":{"role":"user","content":"hi"}}
+{"type":"assistant","uuid":"a1","parentUuid":"u1","sessionId":"s5","timestamp":"2026-07-20T10:00:01Z","cwd":"/tmp/proj","model":"claude-opus-4-5","message":{"role":"assistant","content":[{"type":"text","text":"hello back"}],"usage":{"input_tokens":120,"output_tokens":42,"cache_creation_input_tokens":5000,"cache_read_input_tokens":200000,"service_tier":"standard","speed":"fast"}}}
