@@ -385,21 +385,30 @@ func buildMessageData(m *domain.Message, parentID string) (string, error) {
 		}
 	case domain.RoleAssistant:
 		raw = map[string]any{
-			"role":      "assistant",
-			"mode":      "build",
-			"agent":     orDefault(m.Agent, "build"),
-			"variant":   orDefault(m.Variant, "thinking"),
-			"path":      map[string]any{"cwd": "", "root": "/"},
-			"cost":      0,
+			"role":    "assistant",
+			"mode":    "build",
+			"agent":   orDefault(m.Agent, "build"),
+			"variant": orDefault(m.Variant, "thinking"),
+			"path":    map[string]any{"cwd": "", "root": "/"},
+			"cost":    m.CostUSD,
 			"tokens": map[string]any{
-				"input":    0,
-				"output":   0,
-				"reasoning": 0,
-				"cache":    map[string]any{"read": 0, "write": 0},
+				"input":     m.Tokens.Input,
+				"output":    m.Tokens.Output,
+				"reasoning": m.Tokens.Reasoning,
+				"cache": map[string]any{
+					"read":  m.Tokens.CacheRead,
+					"write": m.Tokens.CacheWrite,
+				},
 			},
 			"modelID":    m.ModelID,
 			"providerID": m.ProviderID,
 			"time":       map[string]any{"created": msOrZero(m.CreatedAt)},
+		}
+		if m.Tokens.ServiceTier != "" {
+			raw["serviceTier"] = m.Tokens.ServiceTier
+		}
+		if m.Tokens.Speed != "" {
+			raw["speed"] = m.Tokens.Speed
 		}
 	default:
 		return "", fmt.Errorf("unsupported role %s", m.Role)

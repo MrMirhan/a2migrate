@@ -47,6 +47,7 @@ type entry struct {
 	AgentID     string
 	Title       string // for ai-title
 	LeafUUID    string // for last-prompt
+	Model       string // CC records message.model at top level
 }
 
 // messagePayload is a partial mirror of CC's `message` field. We only model
@@ -54,6 +55,69 @@ type entry struct {
 type messagePayload struct {
 	Role    string          `json:"role"`
 	Content json.RawMessage `json:"content"`
+	Usage   json.RawMessage `json:"usage"`
+	Model   string          `json:"model"`
+}
+
+// usagePayload mirrors the Anthropic-style usage block that CC stores on
+// assistant messages. All fields are optional; only those actually present
+// in the JSON survive.
+type usagePayload struct {
+	InputTokens              int64 `json:"input_tokens"`
+	OutputTokens             int64 `json:"output_tokens"`
+	CacheCreationInputTokens int64 `json:"cache_creation_input_tokens"`
+	CacheReadInputTokens     int64 `json:"cache_read_input_tokens"`
+	ReasoningTokens          int64 `json:"reasoning_tokens"`
+	ServiceTier              string `json:"service_tier"`
+	Speed                    string `json:"speed"`
+}
+
+// TokenCounts is the migration-friendly form of CC's usage block. It maps
+// 1:1 onto OC's `tokens.{input,output,reasoning,cache.{read,write}}` shape.
+type TokenCounts struct {
+	Input          int64 `json:"input"`
+	Output         int64 `json:"output"`
+	Reasoning      int64 `json:"reasoning"`
+	CacheRead      int64 `json:"cache_read"`
+	CacheWrite     int64 `json:"cache_write"`
+	ServiceTier    string `json:"service_tier,omitempty"`
+	Speed          string `json:"speed,omitempty"`
+	Raw            json.RawMessage `json:"raw,omitempty"`
+}
+
+// FromUsage projects a usage block into the OC shape. Reasoning defaults to 0
+// (CC doesn't carry reasoning_tokens on assistant messages in the standard
+// Claude API).
+func FromUsage(u usagePayload) TokenCounts {
+	return TokenCounts{
+		Input:       u.InputTokens,
+		Output:      u.OutputTokens,
+		CacheRead:   u.CacheReadInputTokens,
+		CacheWrite:  u.CacheCreationInputTokens,
+		ServiceTier: u.ServiceTier,
+		Speed:       u.Speed,
+	}
+}
+
+// tokensFromUsage unmarshals a raw usage blob and projects it. Returns
+// zero Tokens on parse failure (we'd rather emit nothing than fabricate).
+func tokensFromUsage(raw json.RawMessage) domain.Tokens {
+	if len(raw) == 0 {
+		return domain.Tokens{}
+	}
+	var u usagePayload
+	if err := json.Unmarshal(raw, &u); err != nil {
+		return domain.Tokens{}
+	}
+	tc := FromUsage(u)
+	return domain.Tokens{
+		Input:       tc.Input,
+		Output:      tc.Output,
+		CacheRead:   tc.CacheRead,
+		CacheWrite:  tc.CacheWrite,
+		ServiceTier: tc.ServiceTier,
+		Speed:       tc.Speed,
+	}
 }
 
 // toolResultBlock is one {type:"tool_result"} block in a user message.
@@ -156,6 +220,9 @@ func parseEntry(raw map[string]json.RawMessage) (entry, bool) {
 	_ = json.Unmarshal(raw["isSidechain"], &e.IsSidechain)
 	_ = json.Unmarshal(raw["agentId"], &e.AgentID)
 	_ = json.Unmarshal(raw["leafUuid"], &e.LeafUUID)
+	if v, ok := raw["model"]; ok {
+		_ = json.Unmarshal(v, &e.Model)
+	}
 
 	if ts, ok := raw["timestamp"]; ok {
 		var s string
@@ -282,6 +349,8 @@ func entriesToSession(entries []entry, ref SessionRef) (domain.Session, error) {
 				CreatedAt: e.Timestamp,
 				Agent:     "build",
 				Variant:   "thinking",
+				ModelID:   e.Model,
+				Tokens:    tokensFromUsage(e.Message.Usage),
 				Parts:     parts,
 			}
 			current = &msg

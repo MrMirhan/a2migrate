@@ -54,7 +54,35 @@ type Message struct {
 	ModelID    string
 	ProviderID string
 	Variant    string
-	Parts      []Part
+	// Tokens holds the per-message usage block. Populated from CC's
+	// message.usage on forward migration; populated from OC's
+	// message.data.tokens on reverse migration. Zero-value means
+	// "unknown / not preserved" — never fabricate.
+	Tokens Tokens
+	// CostUSD is the OC-side cost figure. Always zero on forward
+	// migration (CC doesn't track cost). Preserved on reverse.
+	CostUSD float64
+	Parts   []Part
+}
+
+// Tokens is the portable per-message usage shape. Both CC and OC carry
+// these values (CC as input/output/cache_*/..., OC as the same plus a
+// reasoning_tokens slot that Anthropic doesn't currently emit).
+type Tokens struct {
+	Input      int64 `json:"input"`
+	Output     int64 `json:"output"`
+	Reasoning  int64 `json:"reasoning"`
+	CacheRead  int64 `json:"cache_read"`
+	CacheWrite int64 `json:"cache_write"`
+	// ServiceTier and Speed pass through from CC's usage block. OC
+	// doesn't track these so they're informational.
+	ServiceTier string `json:"service_tier,omitempty"`
+	Speed       string `json:"speed,omitempty"`
+}
+
+// IsZero reports whether the token block is empty.
+func (t Tokens) IsZero() bool {
+	return t == Tokens{}
 }
 
 // Role is the speaker role.
