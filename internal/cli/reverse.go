@@ -9,7 +9,8 @@ import (
 
 	"github.com/mirhan/a2migrate/internal/migrate"
 	"github.com/mirhan/a2migrate/internal/platform"
-	"github.com/mirhan/a2migrate/internal/source/opencode"
+	ocsrc "github.com/mirhan/a2migrate/internal/source/opencode"
+	cctgt "github.com/mirhan/a2migrate/internal/target/claudecode"
 )
 
 // newOCSessionsCmd wires the OC-side sessions subcommand tree.
@@ -74,7 +75,7 @@ func newOCSessionsShowCmd() *cobra.Command {
 		Short: "Show one OpenCode session's details",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			r := opencode.NewSessionReader(resolveOCDB(from))
+			r := ocsrc.NewSessionReader(resolveOCDB(from))
 			db, err := r.Open(cmd.Context())
 			if err != nil {
 				return err
@@ -347,11 +348,11 @@ func runReverseArtifacts(ctx context.Context, dryRun, yes bool, cwd string, cmd 
 	use := cmd.Name()
 	switch use {
 	case "oc-skills":
-		skills, err := opencode.ReadGlobalSkills()
+		skills, err := ocsrc.ReadGlobalSkills()
 		if err != nil {
 			return err
 		}
-		if p, err := opencode.ReadProjectSkills(cwd); err == nil {
+		if p, err := ocsrc.ReadProjectSkills(cwd); err == nil {
 			skills = append(skills, p...)
 		}
 		w := platformOpen().SkillWriterFor(cwd)
@@ -364,11 +365,11 @@ func runReverseArtifacts(ctx context.Context, dryRun, yes bool, cwd string, cmd 
 			fmt.Fprintf(cmd.OutOrStdout(), "skill: %s\n", p)
 		}
 	case "oc-commands":
-		cmds, err := opencode.ReadGlobalCommands()
+		cmds, err := ocsrc.ReadGlobalCommands()
 		if err != nil {
 			return err
 		}
-		if p, err := opencode.ReadProjectCommands(cwd); err == nil {
+		if p, err := ocsrc.ReadProjectCommands(cwd); err == nil {
 			cmds = append(cmds, p...)
 		}
 		w := platformOpen().CommandWriterFor(cwd)
@@ -381,11 +382,11 @@ func runReverseArtifacts(ctx context.Context, dryRun, yes bool, cwd string, cmd 
 			fmt.Fprintf(cmd.OutOrStdout(), "command: %s\n", p)
 		}
 	case "oc-agents":
-		agents, err := opencode.ReadGlobalAgents()
+		agents, err := ocsrc.ReadGlobalAgents()
 		if err != nil {
 			return err
 		}
-		if p, err := opencode.ReadProjectAgents(cwd); err == nil {
+		if p, err := ocsrc.ReadProjectAgents(cwd); err == nil {
 			agents = append(agents, p...)
 		}
 		w := platformOpen().AgentWriterFor(cwd)
@@ -398,11 +399,11 @@ func runReverseArtifacts(ctx context.Context, dryRun, yes bool, cwd string, cmd 
 			fmt.Fprintf(cmd.OutOrStdout(), "agent: %s\n", p)
 		}
 	case "oc-rules":
-		rules, err := opencode.ReadGlobalRules()
+		rules, err := ocsrc.ReadGlobalRules()
 		if err != nil {
 			return err
 		}
-		if p, err := opencode.ReadProjectRules(cwd); err == nil {
+		if p, err := ocsrc.ReadProjectRules(cwd); err == nil {
 			rules = append(rules, p...)
 		}
 		w := platformOpen().RuleWriterFor(cwd)
@@ -424,7 +425,7 @@ func runReverseMCP(ctx context.Context, dryRun, yes bool, ccHome string, cmd *co
 	if !yes && !dryRun {
 		fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
 	}
-	servers, err := opencode.ReadGlobalMCP()
+	servers, err := ocsrc.ReadGlobalMCP()
 	if err != nil {
 		return err
 	}
@@ -443,6 +444,37 @@ func runReverseMCP(ctx context.Context, dryRun, yes bool, ccHome string, cmd *co
 		return err
 	}
 	fmt.Fprintf(cmd.OutOrStdout(), "merged %d server(s)\n", len(servers))
+	return nil
+}
+
+// runReverseSystemPrompt copies OC's ~/.config/opencode/AGENTS.md back to
+// ~/.claude/CLAUDE.md. Triggered by both `oc-system` and the `reverse`
+// meta-command.
+func runReverseSystemPrompt(dryRun, yes bool, ccHome string, cmd *cobra.Command) error {
+	if !yes && !dryRun {
+		fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
+	}
+	prompt, err := ocsrc.ReadGlobalSystemPrompt()
+	if err != nil {
+		return err
+	}
+	if prompt == nil {
+		fmt.Fprintln(cmd.OutOrStdout(), "no AGENTS.md found")
+		return nil
+	}
+	if dryRun {
+		fmt.Fprintf(cmd.OutOrStdout(), "would write %s -> %s\n", prompt.SourcePath, filepath.Join(ccHome, "CLAUDE.md"))
+		return nil
+	}
+	w := cctgt.NewSystemPromptWriter()
+	if ccHome != "" {
+		w.Home = ccHome
+	}
+	out, err := w.Write(prompt)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(cmd.OutOrStdout(), "wrote %s\n", out)
 	return nil
 }
 

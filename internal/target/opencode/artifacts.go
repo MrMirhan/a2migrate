@@ -228,6 +228,32 @@ func NewMCPConfigWriter() *MCPConfigWriter {
 	return &MCPConfigWriter{Path: platform.OpenCodeConfigPath()}
 }
 
+// SystemPromptWriter writes the top-level instructions file (AGENTS.md)
+// into ~/.config/opencode/.
+type SystemPromptWriter struct {
+	Home string
+}
+
+// NewSystemPromptWriter points at platform defaults.
+func NewSystemPromptWriter() *SystemPromptWriter {
+	return &SystemPromptWriter{Home: platform.OpenCodeConfigHome()}
+}
+
+// Write emits the AGENTS.md file. Returns the path written.
+func (w *SystemPromptWriter) Write(p *domain.SystemPrompt) (string, error) {
+	if p == nil || p.Body == "" {
+		return "", nil
+	}
+	if err := os.MkdirAll(w.Home, 0o755); err != nil {
+		return "", err
+	}
+	out := filepath.Join(w.Home, "AGENTS.md")
+	if err := os.WriteFile(out, []byte(p.Body), 0o644); err != nil {
+		return "", err
+	}
+	return out, nil
+}
+
 // Apply reads opencode.json (creating if missing), merges the supplied
 // servers under mcp{}, and writes the result back via atomic rename.
 func (w *MCPConfigWriter) Apply(patch MCPConfigPatch) (string, error) {

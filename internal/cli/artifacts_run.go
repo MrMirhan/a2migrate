@@ -152,7 +152,7 @@ func newAllCmd() *cobra.Command {
 	)
 	c := &cobra.Command{
 		Use:   "all",
-		Short: "Migrate everything (sessions, skills, commands, agents, rules, mcp)",
+		Short: "Migrate everything (sessions, skills, commands, agents, rules, mcp, CLAUDE.md)",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if !yes && !dryRun {
 				fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
@@ -192,7 +192,7 @@ func newReverseCmd() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "reverse",
 		Short: "Migrate OpenCode state back to Claude Code (sessions + artifacts)",
-		Long:  "Reads opencode.db and writes JSONL sessions back into ~/.claude/projects/. Also copies OC artifacts (skills, commands, agents, rules, MCP) back to their CC locations.",
+		Long:  "Reads opencode.db and writes JSONL sessions back into ~/.claude/projects/. Also copies OC artifacts (skills, commands, agents, rules, MCP, AGENTS.md) back to their CC locations.",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if !yes && !dryRun {
 				fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
@@ -213,6 +213,11 @@ func newReverseCmd() *cobra.Command {
 			}
 			if err := runReverseMCP(cmd.Context(), dryRun, yes, resolveCCHome(to), cmd); err != nil {
 				return err
+			}
+			if !dryRun {
+				if err := runReverseSystemPrompt(dryRun, yes, resolveCCHome(to), cmd); err != nil {
+					return err
+				}
 			}
 			opts := migrate.ReverseOptions{
 				From:       resolveOCDB(from),
@@ -248,6 +253,71 @@ func newReverseCmd() *cobra.Command {
 	f.StringSliceVar(&excludes, "exclude", nil, "Skip sessions whose OC id matches")
 	f.StringVar(&search, "search", "", "Substring filter on id or title")
 	return c
+}
+
+// newOCSystemCmd wires `a2migrate oc-system` for AGENTS.md → CLAUDE.md.
+func newOCSystemCmd() *cobra.Command {
+	var (
+		dryRun, yes bool
+		to          string
+	)
+	c := &cobra.Command{
+		Use:   "oc-system",
+		Short: "Copy OpenCode AGENTS.md back to ~/.claude/CLAUDE.md",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return runReverseSystemPrompt(dryRun, yes, resolveCCHome(to), cmd)
+		},
+	}
+	f := c.Flags()
+	f.BoolVar(&dryRun, "dry-run", false, "Plan only")
+	f.BoolVar(&yes, "yes", false, "Skip confirmation")
+	f.StringVar(&to, "to", "", "Override Claude Code home")
+	return c
+}
+
+// newSystemCmd wires `a2migrate system` for CLAUDE.md → AGENTS.md.
+func newSystemCmd() *cobra.Command {
+	var (
+		dryRun, yes bool
+	)
+	c := &cobra.Command{
+		Use:   "system",
+		Short: "Copy ~/.claude/CLAUDE.md to ~/.config/opencode/AGENTS.md",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return runSystemPrompt(dryRun, yes, cmd)
+		},
+	}
+	f := c.Flags()
+	f.BoolVar(&dryRun, "dry-run", false, "Plan only")
+	f.BoolVar(&yes, "yes", false, "Skip confirmation")
+	return c
+}
+
+// runSystemPrompt copies ~/.claude/CLAUDE.md to ~/.config/opencode/AGENTS.md.
+// Triggered by both `system` and the `all` meta-command.
+func runSystemPrompt(dryRun, yes bool, cmd *cobra.Command) error {
+	if !yes && !dryRun {
+		fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
+	}
+	prompt, err := claudecode.ReadGlobalSystemPrompt()
+	if err != nil {
+		return err
+	}
+	if prompt == nil {
+		fmt.Fprintln(cmd.OutOrStdout(), "no CLAUDE.md found")
+		return nil
+	}
+	if dryRun {
+		fmt.Fprintf(cmd.OutOrStdout(), "would write %s -> %s\n", prompt.SourcePath, "~/.config/opencode/AGENTS.md")
+		return nil
+	}
+	w := opencode.NewSystemPromptWriter()
+	out, err := w.Write(prompt)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(cmd.OutOrStdout(), "wrote %s\n", out)
+	return nil
 }
 
 // runReverseArtifactsForDomain is a copy of runReverseArtifacts that

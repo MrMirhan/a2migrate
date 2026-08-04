@@ -231,6 +231,25 @@ func ReadGlobalMCP() ([]domain.MCPServer, error) {
 	return ParseMCPServers(data)
 }
 
+// ReadGlobalSystemPrompt reads ~/.claude/CLAUDE.md, the top-level
+// instructions file CC injects into every session's system prompt.
+// Returns nil if the file is missing.
+func ReadGlobalSystemPrompt() (*domain.SystemPrompt, error) {
+	path := filepath.Join(platform.ClaudeCodeHome(), "CLAUDE.md")
+	data, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &domain.SystemPrompt{
+		Origin:     domain.OriginClaudeCode,
+		SourcePath: path,
+		Body:       string(data),
+	}, nil
+}
+
 // ParseMCPServers parses a CC mcp.json body. Tolerates either
 // mcpServers{} (CC) or mcp{} (already-OC). Returns servers in alphabetical
 // order for determinism.

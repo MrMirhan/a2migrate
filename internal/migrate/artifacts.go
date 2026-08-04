@@ -8,16 +8,17 @@ import (
 
 // ArtifactsReport summarises what an artifact migration run produced.
 type ArtifactsReport struct {
-	SkillsWritten   []string
-	CommandsWritten []string
-	AgentsWritten   []string
-	RulesWritten    []string
-	MCPMerged       []string
-	DryRun          bool
+	SkillsWritten      []string
+	CommandsWritten    []string
+	AgentsWritten      []string
+	RulesWritten       []string
+	MCPMerged          []string
+	SystemPromptWritten string
+	DryRun             bool
 }
 
 // ArtifactsMigrator coordinates the non-session artifact migration:
-// skills, commands, agents, rules, and MCP servers.
+// skills, commands, agents, rules, MCP, and the top-level system prompt.
 type ArtifactsMigrator struct {
 	CWD    string
 	DryRun bool
@@ -139,6 +140,18 @@ func (m *ArtifactsMigrator) Migrate() (*ArtifactsReport, error) {
 			return rep, err
 		}
 		rep.MCPMerged = serverNames(servers)
+	}
+
+	// Top-level system prompt (CLAUDE.md → AGENTS.md).
+	if prompt, err := claudecode.ReadGlobalSystemPrompt(); err != nil {
+		return rep, err
+	} else if prompt != nil {
+		w := opencode.NewSystemPromptWriter()
+		if out, err := w.Write(prompt); err != nil {
+			return rep, err
+		} else if out != "" {
+			rep.SystemPromptWritten = out
+		}
 	}
 
 	return rep, nil

@@ -713,6 +713,24 @@ func ReadGlobalMCP() ([]domain.MCPServer, error) {
 	return parseOCMCP(data)
 }
 
+// ReadGlobalSystemPrompt reads ~/.config/opencode/AGENTS.md, OC's
+// top-level instructions file. Returns nil if missing.
+func ReadGlobalSystemPrompt() (*domain.SystemPrompt, error) {
+	path := filepath.Join(platform.OpenCodeConfigHome(), "AGENTS.md")
+	data, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &domain.SystemPrompt{
+		Origin:     domain.OriginOpenCode,
+		SourcePath: path,
+		Body:       string(data),
+	}, nil
+}
+
 func parseOCMCP(data []byte) ([]domain.MCPServer, error) {
 	stripped := stripJSONC(string(data))
 	var root map[string]any

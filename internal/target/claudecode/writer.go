@@ -379,6 +379,31 @@ type SkillWriter struct {
 	WorkDir string
 }
 
+// SystemPromptWriter writes the top-level CLAUDE.md instructions file.
+type SystemPromptWriter struct {
+	Home string
+}
+
+// NewSystemPromptWriter points at platform.ClaudeCodeHome().
+func NewSystemPromptWriter() *SystemPromptWriter {
+	return &SystemPromptWriter{Home: platform.ClaudeCodeHome()}
+}
+
+// Write emits ~/.claude/CLAUDE.md.
+func (w *SystemPromptWriter) Write(p *domain.SystemPrompt) (string, error) {
+	if p == nil || p.Body == "" {
+		return "", nil
+	}
+	if err := os.MkdirAll(w.Home, 0o755); err != nil {
+		return "", err
+	}
+	out := filepath.Join(w.Home, "CLAUDE.md")
+	if err := os.WriteFile(out, []byte(p.Body), 0o644); err != nil {
+		return "", err
+	}
+	return out, nil
+}
+
 // NewSkillWriter points at the platform defaults.
 func NewSkillWriter() *SkillWriter {
 	return &SkillWriter{
