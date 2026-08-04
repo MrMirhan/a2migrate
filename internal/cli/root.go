@@ -62,6 +62,7 @@ func NewRootCmd(logger *slog.Logger) *cobra.Command {
 	root.AddCommand(newOCRulesCmd())
 	root.AddCommand(newOCMCPCmd())
 	root.AddCommand(newReverseCmd())
+	root.AddCommand(newSyncCmd())
 	root.AddCommand(newVersionCmd())
 
 	if logger == nil {
