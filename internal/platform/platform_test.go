@@ -16,8 +16,8 @@ func TestEncodeDecodeCWD(t *testing.T) {
 	tests := []struct {
 		path, encoded string
 	}{
-		{"/home/mirhan/works", "-home-mirhan-works"},
-		{"/home/mirhan/works/ppg", "-home-mirhan-works-ppg"},
+		{"/home/alice/projects", "-home-alice-projects"},
+		{"/home/alice/projects/api", "-home-alice-projects-api"},
 		{"/", "-"},
 		{"/tmp", "-tmp"},
 	}

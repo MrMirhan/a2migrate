@@ -163,7 +163,7 @@ func ClaudeCodeMCPPath() string {
 
 // EncodeCWD converts an absolute path into Claude Code's encoded-cwd form.
 //
-//	"/home/mirhan/works" -> "-home-mirhan-works"
+//	"/home/alice/projects" -> "-home-alice-projects"
 func EncodeCWD(absPath string) string {
 	cleaned := filepath.Clean(absPath)
 	if !filepath.IsAbs(cleaned) {

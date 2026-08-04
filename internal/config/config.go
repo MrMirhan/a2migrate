@@ -13,8 +13,8 @@
 //	id   = "vds1"
 //	kind = "ssh"
 //	host = "10.0.0.5"
-//	user = "mirhan"
-//	path = "/home/mirhan/.local/share/a2migrate"
+//	user = "alice"
+//	path = "/home/alice/.local/share/a2migrate"
 //	tools = ["claude_code", "opencode"]
 //
 //	[[endpoint]]
@@ -49,8 +49,8 @@ const (
 type Endpoint struct {
 	ID    string       `toml:"id"`
 	Kind  EndpointKind `toml:"kind"`
-	Host  string       `toml:"host,omitempty"` // SSH only
-	User  string       `toml:"user,omitempty"` // SSH only
+	Host  string       `toml:"host,omitempty"`  // SSH only
+	User  string       `toml:"user,omitempty"`  // SSH only
 	Path  string       `toml:"path"`            // a2migrate data root on the endpoint
 	Tools []tools.ID   `toml:"tools,omitempty"` // empty = all known tools
 }

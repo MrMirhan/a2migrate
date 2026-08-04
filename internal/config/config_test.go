@@ -23,8 +23,8 @@ tools = ["opencode"]
 id   = "vds-istanbul"
 kind = "ssh"
 host = "10.0.0.5"
-user = "mirhan"
-path = "/home/mirhan/.local/share/a2migrate"
+user = "alice"
+path = "/home/alice/.local/share/a2migrate"
 tools = ["claude_code", "opencode"]
 `
 
@@ -44,7 +44,7 @@ func TestParse_Sample(t *testing.T) {
 		t.Errorf("local endpoint malformed: %+v", local)
 	}
 	ssh := f.Endpoints[1]
-	if ssh.ID != "vds-istanbul" || ssh.Kind != KindSSH || ssh.Host != "10.0.0.5" || ssh.User != "mirhan" {
+	if ssh.ID != "vds-istanbul" || ssh.Kind != KindSSH || ssh.Host != "10.0.0.5" || ssh.User != "alice" {
 		t.Errorf("ssh endpoint malformed: %+v", ssh)
 	}
 }
