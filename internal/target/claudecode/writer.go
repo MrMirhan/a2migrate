@@ -389,7 +389,8 @@ func NewSystemPromptWriter() *SystemPromptWriter {
 	return &SystemPromptWriter{Home: platform.ClaudeCodeHome()}
 }
 
-// Write emits ~/.claude/CLAUDE.md.
+// Write emits ~/.claude/CLAUDE.md. Preserves source mtime when the
+// source file is provided so an immediate re-run is a no-op for sync.
 func (w *SystemPromptWriter) Write(p *domain.SystemPrompt) (string, error) {
 	if p == nil || p.Body == "" {
 		return "", nil
@@ -400,6 +401,11 @@ func (w *SystemPromptWriter) Write(p *domain.SystemPrompt) (string, error) {
 	out := filepath.Join(w.Home, "CLAUDE.md")
 	if err := os.WriteFile(out, []byte(p.Body), 0o644); err != nil {
 		return "", err
+	}
+	if p.SourcePath != "" {
+		if info, err := os.Stat(p.SourcePath); err == nil {
+			_ = os.Chtimes(out, info.ModTime(), info.ModTime())
+		}
 	}
 	return out, nil
 }

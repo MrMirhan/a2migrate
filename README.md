@@ -88,6 +88,7 @@ a2migrate
 ├── agents                          CC→OC: .claude/agents/ → .opencode/agent/
 ├── rules                           CC→OC: .claude/rules/ → .opencode/rules/
 ├── mcp                             CC→OC: mcpServers{} → mcp{} (opencode.json)
+├── system                         CC→OC: ~/.claude/CLAUDE.md → ~/.config/opencode/AGENTS.md
 ├── all                             run every CC→OC domain
 │
 ├── oc-sessions                     (OC source → CC target)
@@ -100,6 +101,7 @@ a2migrate
 ├── oc-agents                       OC→CC: .opencode/agent/ → .claude/agents/
 ├── oc-rules                        OC→CC: .opencode/rules/ → .claude/rules/
 ├── oc-mcp                          OC→CC: mcp{} → mcpServers{}
+├── oc-system                       OC→CC: AGENTS.md → CLAUDE.md
 ├── reverse                         run every OC→CC domain
 │
 ├── sync                            bidirectional CC↔OC reconciler
