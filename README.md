@@ -115,7 +115,7 @@ Checksums are published alongside as `a2migrate_<version>_SHA256SUMS`.
 
 ```sh
 a2migrate version
-# a2migrate v0.1.1 (commit ..., built ..., linux/amd64, go1.25)
+# a2migrate v0.1.2 (commit ..., built ..., linux/amd64, go1.25)
 ```
 
 ## Features

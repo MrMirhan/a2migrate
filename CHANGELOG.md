@@ -10,6 +10,14 @@ is maintained by hand and ships inside the release archives.
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-08-04
+
+### Fixed
+
+- `a2migrate version` reports the module version when the binary was
+  built with `go install`, which does not apply the release ldflags. It
+  used to print `dev`.
+
 ## [0.1.1] - 2026-08-04
 
 First usable release. Migrates state between Claude Code and OpenCode in
