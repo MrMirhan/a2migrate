@@ -5,53 +5,55 @@ based on [Keep a Changelog](https://keepachangelog.com/), and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
 Release commits follow [Conventional Commits](https://www.conventionalcommits.org/).
-GoReleaser parses them and groups entries by type.
+GoReleaser parses them to generate the GitHub Release notes; this file
+is maintained by hand and ships inside the release archives.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-04
+
+First public release. Migrates state between Claude Code and OpenCode in
+both directions.
+
 ### Added
 
-- Bidirectional sync (`a2migrate sync`): mtime last-writer-wins for
-  file artifacts (skills, commands, agents, rules, MCP,
-  CLAUDE.md/AGENTS.md); uuid-deduped append-only for sessions.
-- OC → CC migration, via `a2migrate migrate opencode claude-code`.
-- Per-message token attribution preserved in both directions
-  (CC `message.usage` ↔ OC `message.data.tokens`).
-- `CLAUDE.md` ↔ `AGENTS.md` migration as one of the artifact domains
-  (top-level system-prompt file).
-- Shell completion for tool and domain arguments, driven by the tool
-  registry. The domain positions offer only what both tools declare
-  support for.
-- `--backup` now covers the Claude Code target too, snapshotting every
-  JSONL file about to be overwritten, subagent transcripts included.
-
-### Changed
-
-- **Breaking:** tools are arguments instead of commands. The 19
-  top-level commands collapse to nine verbs:
-  `migrate <from> <to> [domain...]`, `list`, `show`, `select`,
-  `verify`, `repair`, plus `sync`, `tools`, `version`. Adding a tool no
-  longer adds commands.
-- **Breaking:** `all` and `reverse` are gone. Omitting the domain
-  arguments migrates every shared domain; swapping `<from>` and `<to>`
-  migrates the other way.
-- **Breaking:** every `oc-*` command is removed with no alias. Use
-  `a2migrate migrate opencode claude-code <domain>`.
-- **Breaking:** the `--from` / `--to` path overrides are renamed
-  `--source-path` / `--target-path`, since `<from>` and `<to>` now name
-  tools.
-- Naming one artifact domain now migrates only that domain. Previously
-  `a2migrate skills` also migrated commands, agents, rules, MCP, and the
-  system prompt.
-- Session migration emits `ccOriginID` in the OC `message.data` blob
-  so sync can deduplicate appends by uuid.
-
-### Fixed
-
-- `A2MIGRATE_LOG_LEVEL` now actually sets the log level. It was
-  documented but never wired, so only `--log-level` had any effect.
+- `migrate <from> <to> [domain...]` moves sessions and artifacts between
+  two tools. Swapping the arguments migrates the other way; omitting the
+  domains migrates every domain both tools support.
+- Domains: sessions, skills, commands, agents, rules, MCP servers, and
+  the `CLAUDE.md` ↔ `AGENTS.md` system prompt.
+- Session fidelity in both directions: user and assistant text,
+  reasoning blocks, tool calls with inputs and outputs, subagent chains,
+  and per-message token counts (`message.usage` ↔ `message.data.tokens`).
+  OpenCode's per-message cost survives into Claude Code as a `cost_usd`
+  extension field.
+- `list`, `show`, `select`, `verify`, and `repair`, each taking the tool
+  as an argument. `verify` reports which sessions were migrated in and
+  which are native to the tool.
+- `sync` reconciles both sides continuously: mtime last-writer-wins for
+  file artifacts, uuid-deduped append-only for sessions.
+- `--backup` snapshots the target before writing — the SQLite database
+  for OpenCode, every JSONL file about to be overwritten (subagent
+  transcripts included) for Claude Code.
+- `--dry-run` on every write path, and idempotent re-runs: already
+  migrated sessions are detected via `claude_code_origin` metadata and
+  skipped.
+- Filtering with `--search`, `--include`, `--exclude`, and renaming with
+  `--rename old=new`. Selecting a parent session brings its subagents
+  along rather than orphaning them.
+- Post-migration repair for OpenCode's renderer invariants:
+  assistant→user reparenting, step-part padding, step-start timestamps,
+  and tool-state times.
+- Shell completion driven by the tool registry. Domain arguments offer
+  only what both tools declare support for, so an unsupported
+  combination cannot be completed into existence.
+- `tools` lists the registry and each tool's capability matrix.
+- Prebuilt binaries for Linux, macOS, and Windows on amd64 and arm64,
+  plus a Homebrew cask for macOS. Pure-Go SQLite, no CGo.
 
 ### Notes
 
-- This is the v0.1 release line. Public API may evolve; pin to
-  minor versions.
+- Claude Code and OpenCode are wired today. Adapter scaffolding exists
+  for Codex, Qwen Code, Gemini CLI, and Factory Droid; their format
+  parsers are not implemented yet.
+- Pre-1.0: the command surface may still change. Pin to a minor version.
