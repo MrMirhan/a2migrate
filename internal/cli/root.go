@@ -21,9 +21,12 @@ func NewRootCmd(logger *slog.Logger) *cobra.Command {
 	}
 
 	root := &cobra.Command{
-		Use:           "a2migrate",
-		Short:         "Migrate AI coding session state between agents",
-		Long:          "a2migrate ports Claude Code sessions, skills, commands, agents, rules, and MCP servers into OpenCode.",
+		Use:   "a2migrate",
+		Short: "Migrate AI coding session state between agents",
+		Long: "a2migrate ports sessions, skills, commands, agents, rules, MCP servers, and system\n" +
+			"prompts between AI coding tools.\n\n" +
+			"Tools are arguments, not commands: `a2migrate migrate claude-code opencode sessions`.\n" +
+			"Run `a2migrate tools` to see which tools and domains are available.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
@@ -55,25 +58,15 @@ func NewRootCmd(logger *slog.Logger) *cobra.Command {
 		return nil
 	}
 
-	root.AddCommand(newSessionsCmd())
-	root.AddCommand(newSkillsCmd())
-	root.AddCommand(newCommandsCmd())
-	root.AddCommand(newAgentsCmd())
-	root.AddCommand(newRulesCmd())
-	root.AddCommand(newMCPCmd())
-	root.AddCommand(newSystemCmd())
-	root.AddCommand(newAllCmd())
-	root.AddCommand(newOCSessionsCmd())
-	root.AddCommand(newOCSkillsCmd())
-	root.AddCommand(newOCCommandsCmd())
-	root.AddCommand(newOCAgentsCmd())
-	root.AddCommand(newOCRulesCmd())
-	root.AddCommand(newOCMCPCmd())
-	root.AddCommand(newOCSystemCmd())
-	root.AddCommand(newReverseCmd())
-root.AddCommand(newSyncCmd())
-root.AddCommand(newToolsCmd())
-root.AddCommand(newVersionCmd())
+	root.AddCommand(newMigrateCmd())
+	root.AddCommand(newListCmd())
+	root.AddCommand(newShowCmd())
+	root.AddCommand(newSelectCmd())
+	root.AddCommand(newVerifyCmd())
+	root.AddCommand(newRepairCmd())
+	root.AddCommand(newSyncCmd())
+	root.AddCommand(newToolsCmd())
+	root.AddCommand(newVersionCmd())
 
 	return root
 }
