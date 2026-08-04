@@ -607,10 +607,10 @@ func skillsToRules(xs []domain.Skill) []domain.Rule {
 	return out
 }
 
-// ReadGlobalMCP reads ~/.config/opencode/opencode.json and parses its
-// mcp{} block back into the domain.MCPServer form CC expects.
+// ReadGlobalMCP reads the OpenCode user config and parses its mcp{}
+// block back into the domain.MCPServer form CC expects.
 func ReadGlobalMCP() ([]domain.MCPServer, error) {
-	path := platform.OpenCodeConfigPath()
+	path := platform.FindOpenCodeConfig()
 	data, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil, nil

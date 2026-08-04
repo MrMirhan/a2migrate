@@ -124,9 +124,33 @@ func OpenCodeDBPath() string {
 	return filepath.Join(OpenCodeDataHome(), "opencode.db")
 }
 
-// OpenCodeConfigPath returns the path to the user config file (opencode.json / opencode.jsonc).
+// OpenCodeConfigPath returns the path to the user config file.
+// Returns opencode.json (the canonical name). Callers that want to
+// support the .jsonc extension should use OpenCodeConfigPathCandidates.
 func OpenCodeConfigPath() string {
 	return filepath.Join(OpenCodeConfigHome(), "opencode.json")
+}
+
+// OpenCodeConfigPathCandidates returns the list of paths the OC config
+// may live at, in priority order. The first existing path is canonical.
+// Currently checks opencode.json then opencode.jsonc.
+func OpenCodeConfigPathCandidates() []string {
+	home := OpenCodeConfigHome()
+	return []string{
+		filepath.Join(home, "opencode.json"),
+		filepath.Join(home, "opencode.jsonc"),
+	}
+}
+
+// FindOpenCodeConfig returns the first existing config path or the
+// default (opencode.json) if none exist.
+func FindOpenCodeConfig() string {
+	for _, p := range OpenCodeConfigPathCandidates() {
+		if Exists(p) {
+			return p
+		}
+	}
+	return OpenCodeConfigPath()
 }
 
 // ClaudeCodeProjectsDir returns the path containing encoded-cwd project dirs.
