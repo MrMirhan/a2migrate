@@ -2,216 +2,213 @@
 
 Migrate AI coding session state between agents.
 
-`a2migrate` is a Go CLI that ports Claude Code sessions, skills,
-commands, agents, rules, and MCP server configuration into OpenCode,
-and back. It preserves chat content (user prompts, assistant text,
-reasoning, tool calls, subagent chains) and re-emits them in the
-target system's native shape.
+`a2migrate` is a Go CLI that ports your Claude Code sessions, skills,
+commands, agents, rules, MCP servers, and top-level instructions between
+OpenCode and Claude Code in both directions. It preserves chat content,
+tool calls, subagent chains, and per-message token usage.
 
-Two directions:
+`all` migrates CC → OC; `reverse` migrates OC → CC; `sync` keeps both
+sides in lock-step over time. All three are idempotent.
 
-- **CC → OC** (`a2migrate all`) — primary direction. Reads JSONL
-  transcripts from `~/.claude/`, writes SQLite rows into
-  `~/.local/share/opencode/opencode.db`, plus file copies for
-  artifacts.
-- **OC → CC** (`a2migrate reverse`) — secondary direction. Reads
-  SQLite, writes JSONL back into `~/.claude/projects/`, plus file
-  copies for artifacts.
+## Install
 
-## Status
+```sh
+go install github.com/mirhan/a2migrate/cmd/a2migrate@latest
+```
 
-v1 in development. Tested against `opencode.db` from OpenCode 1.18.x.
+Or download a binary from [GitHub Releases](#). macOS, Linux, Windows —
+no CGo, single static binary.
 
-## Features
+Verify:
 
-- Discover Claude Code sessions automatically across all projects.
-- List, search, and filter sessions.
-- Interactive multi-select TUI for choosing sessions.
-- Migrate one, many, or all sessions in a single transactional write.
-- Migrate skills, commands, agents, rules, and MCP servers.
-- Idempotent re-runs — already-migrated sessions are skipped.
-- Dry-run mode that produces a full plan without writing.
-- Optional timestamped DB backup before apply.
-- Cross-platform (Linux, macOS, Windows) — pure-Go SQLite, no cgo.
-- Structured logging via `log/slog`.
+```sh
+a2migrate version
+# a2migrate dev (commit ..., built ..., linux/amd64, go1.24)
+```
 
 ## Quick start
 
 ```sh
-# install
-go install github.com/mirhan/a2migrate/cmd/a2migrate@latest
-
-# list available CC sessions
+# See what would migrate, with zero side effects.
 a2migrate sessions list
+a2migrate sessions migrate --dry-run --search "refactor auth"
 
-# see what a migration would do
-a2migrate sessions migrate --dry-run
-
-# migrate one session (with backup)
+# Migrate one session (with timestamped DB backup before apply).
 a2migrate sessions migrate --search "bug fix" --backup --yes
 
-# interactive picker
-a2migrate sessions select
-
-# migrate everything (CC → OC)
+# Migrate everything in one shot.
 a2migrate all --backup --yes
 
-# verify what landed in the DB
-a2migrate sessions verify
-
-# re-run post-fix invariants without re-migrating
-a2migrate sessions repair
-
-# OC → CC: list what's in opencode.db
-a2migrate oc-sessions list
-
-# OC → CC: write JSONL back to ~/.claude/projects/
-a2migrate oc-sessions migrate --yes
-
-# OC → CC: everything (sessions + skills + commands + agents + rules + mcp)
+# Push OC sessions back into CC (e.g. you bounced between tools).
 a2migrate reverse --to /tmp/cc-home --yes
+
+# Keep both sides in sync after every session ends.
+a2migrate sync
 ```
+
+## Features
+
+### Migration (one-shot, copy semantics)
+
+- **Sessions** — JSONL transcripts → SQLite rows (CC→OC) or vice versa.
+  Includes user prompts, assistant text, reasoning blocks, tool calls
+  with input/output, subagent chains via `session.parent_id`. Preserves
+  per-message `message.usage` (CC) ↔ `message.data.tokens` (OC).
+- **Skills** — markdown files copied with frontmatter round-tripped;
+  lives in `~/.config/opencode/skills/` and `<cwd>/.opencode/skills/`.
+- **Commands** — slash command definitions copied with their
+  `argument-hint` and `allowed-tools` fields preserved.
+- **Agents** — subagent definitions with model + tools preserved.
+- **Rules** — path-scoped rule files with their `paths:` glob patterns.
+- **MCP servers** — `mcpServers{}` ↔ `mcp{}` with `command[]` split /
+  merge.
+- **CLAUDE.md ↔ AGENTS.md** — the top-level system-prompt file that
+  each tool injects into every session's context.
+
+### Sync (continuous, reconcile semantics)
+
+- **mtime last-writer-wins** for file artifacts. Files on only one side
+  propagate to the other. Mtime is preserved across copies, so re-runs
+  are no-ops.
+- **uuid-deduped append-only** for sessions. New CC messages get
+  appended to OC, and vice versa, with the CC `uuid` recorded in OC's
+  `message.data` so duplicates are detected and skipped.
+- **Bail when nothing is newer** — `sync` finishes instantly if both
+  sides are already in sync.
+
+### Cross-cutting
+
+- **Idempotent.** Every code path is safe to re-run. Already-migrated
+  sessions are detected via `claude_code_origin` metadata and skipped.
+- **Transactional.** Session writes run in a single SQL transaction
+  with a `--backup` flag.
+- **Self-healing.** Post-fix invariants restore the four renderer
+  requirements: assistant→user reparents, step-start/step-finish get
+  padded with native fields, bare step-start gets a `time` block, every
+  tool part gets `state.time.compacted`.
+- **Cross-platform.** Linux, macOS, Windows. Pure-Go SQLite (no CGo).
+- **Cross-architecture.** Builds on `linux/amd64`, `linux/arm64`,
+  `darwin/amd64`, `darwin/arm64`, `windows/amd64`.
 
 ## Commands
 
 ```
 a2migrate
-├── sessions                        (CC source → OC target)
+├── sessions                 CC source → OC target
 │   ├── list
 │   ├── show <id>
-│   ├── select                      interactive picker
-│   ├── migrate
+│   ├── select               interactive picker
+│   ├── migrate [--backup] [--dry-run] [--search] [--include] [--exclude]
+│   │             [--rename old=new] [--skip-repair] [--yes]
 │   ├── verify
 │   └── repair
-├── skills                          CC→OC: ~/.claude/skills/ → ~/.config/opencode/skills/
-├── commands                        CC→OC: .claude/commands/ → .opencode/command/
-├── agents                          CC→OC: .claude/agents/ → .opencode/agent/
-├── rules                           CC→OC: .claude/rules/ → .opencode/rules/
-├── mcp                             CC→OC: mcpServers{} → mcp{} (opencode.json)
-├── system                         CC→OC: ~/.claude/CLAUDE.md → ~/.config/opencode/AGENTS.md
-├── all                             run every CC→OC domain
+├── skills                   ~/.claude/skills/ → ~/.config/opencode/skills/
+├── commands                 .claude/commands/ → .opencode/command/
+├── agents                   .claude/agents/ → .opencode/agent/
+├── rules                    .claude/rules/ → .opencode/rules/
+├── mcp                      mcpServers{} → mcp{}
+├── system                   ~/.claude/CLAUDE.md → ~/.config/opencode/AGENTS.md
+├── all                      every CC→OC domain above
 │
-├── oc-sessions                     (OC source → CC target)
-│   ├── list                        list sessions in opencode.db
+├── oc-sessions              OC source → CC target
+│   ├── list
 │   ├── show <oc-id>
-│   ├── migrate                     write JSONL back into ~/.claude/projects/
-│   └── verify                      list what's in opencode.db
-├── oc-skills                       OC→CC: ~/.config/opencode/skills/ → ~/.claude/skills/
-├── oc-commands                     OC→CC: .opencode/command/ → .claude/commands/
-├── oc-agents                       OC→CC: .opencode/agent/ → .claude/agents/
-├── oc-rules                        OC→CC: .opencode/rules/ → .claude/rules/
-├── oc-mcp                          OC→CC: mcp{} → mcpServers{}
-├── oc-system                       OC→CC: AGENTS.md → CLAUDE.md
-├── reverse                         run every OC→CC domain
+│   ├── migrate
+│   └── verify
+├── oc-skills                .opencode/skills/ → .claude/skills/
+├── oc-commands              .opencode/command/ → .claude/commands/
+├── oc-agents                .opencode/agent/ → .claude/agents/
+├── oc-rules                 .opencode/rules/ → .claude/rules/
+├── oc-mcp                   mcp{} → mcpServers{}
+├── oc-system                AGENTS.md → CLAUDE.md
+├── reverse                  every OC→CC domain above
 │
-├── sync                            bidirectional CC↔OC reconciler
-│   ├── all                         artifacts + sessions in both directions
-│   ├── artifacts                   mtime last-writer-wins per file
-│   ├── sessions                    CC → OC, uuid-deduped append-only
-│   └── reverse                     OC → CC, uuid-deduped append-only
+├── sync                     bidirectional CC↔OC reconciler
+│   ├── all                  artifacts + sessions in both directions
+│   ├── artifacts            mtime last-writer-wins
+│   ├── sessions             CC → OC, append-only
+│   └── reverse              OC → CC, append-only
 │
 └── version
 ```
 
-## Session migration flags
+## What gets preserved
 
-| Flag | Description |
+| Field | CC → OC | OC → CC |
+|---|---|---|
+| Message role / agent / model | yes | yes |
+| Per-message `input_tokens`, `output_tokens`, `cache_read_tokens`, `cache_write_tokens` | yes | yes |
+| Reasoning blocks | yes | yes |
+| Tool calls (input + output) | yes | yes |
+| Subagent chains | yes (`session.parent_id`) | yes (`bridge-session` + dir nesting) |
+| Session title | yes | yes |
+| Project directory | yes | yes |
+| `time.completed` per message | n/a (OC only) | yes |
+| Cost (`cost_usd` extension field on JSONL) | n/a (CC has no cost data) | yes |
+| `last-prompt` / `attachment` / `queue-operation` records | dropped (no OC analog) | dropped (no CC analog) |
+| Reasoning signatures (for model-side replay) | dropped | n/a |
+| Plugin marketplace state / daemon / settings / credentials | not touched | not touched |
+
+## Environment variables
+
+| Variable | Effect |
 |---|---|
-| `--from <path>` | Override Claude Code home (default `~/.claude`). |
-| `--to <path>` | Override OpenCode database path. |
-| `--include <id>` | Only migrate sessions whose id matches (repeatable). |
-| `--exclude <id>` | Skip sessions whose id matches (repeatable). |
-| `--search <sub>` | Substring filter on id or file path. |
-| `--rename <old=new>` | Rename a session during migration (repeatable). |
-| `--backup` | Create a timestamped DB backup before apply. |
-| `--dry-run` | Plan only; do not write. |
-| `--yes` | Skip confirmation prompts. |
-| `--skip-repair` | Skip the four post-fix invariants. |
+| `CLAUDE_CODE_HOME` | Override `~/.claude`. |
+| `OPENCODE_DATA_HOME` | Override `~/.local/share/opencode/`. |
+| `OPENCODE_CONFIG_HOME` | Override `~/.config/opencode/`. |
+| `OPENCODE_DISABLE_CLAUDE_CODE` | If set, OpenCode will not read anything from `~/.claude/`. |
+| `OPENCODE_DISABLE_CLAUDE_CODE_PROMPT` | Suppress only the `~/.claude/CLAUDE.md` fallback. |
+| `A2MIGRATE_LOG_LEVEL` | Override log level (`error`, `warn`, `info`, `debug`). |
 
-## How it works
+XDG Base Directory spec is followed on Linux. macOS uses
+`~/Library/...`. Windows uses `%AppData%` / `%LocalAppData%`.
 
-Session transcripts live as JSONL on disk under
-`~/.claude/projects/<encoded-cwd>/<sid>.jsonl`. `a2migrate` streams
-each line, normalizes the CC record envelope into OpenCode's two-tier
-shape (message envelope + typed parts), and writes them in a single
-SQLite transaction.
+## When to use `all` vs `reverse` vs `sync`
 
-Four post-fix invariants are then run idempotently:
+- **Just switched tools and want everything in one place.** Run `all`
+  (CC → OC) or `reverse` (OC → CC). Idempotent.
+- **Live on both tools and don't want drift.** Run `sync` after each
+  session, or wire it into a cron / hook. `sync` updates whichever side
+  has newer content; equal mtimes cost nothing.
+- **Daily driver, mostly CC.** Run `all` once, then `sync sessions`
+  to pick up new CC sessions when you open OC.
+- **Daily driver, mostly OC.** Same, but `reverse` then `sync reverse`.
 
-1. **Reparent** — assistant messages must have a user parent. CC
-   occasionally emits assistant→assistant chains during tool streaming;
-   those are re-pointed at the most recent prior user message.
-2. **Pad step parts** — bare step-start/step-finish get the native
-   fields the renderer expects (`tokens`, `cost`, `metadata`, `time`).
-3. **Step-start time** — every step-start gets a `time` block.
-4. **Tool state time** — every tool part gets `state.time.compacted`.
+## When not to use this
 
-The same algorithms drive the original Python script's four post-fix
-helpers; this implementation merges them into one transactional stage.
-
-## What's preserved vs. lost
-
-**Preserved:** session title, project directory, message text, reasoning,
-tool calls with input/output, subagent chains via `session.parent_id`,
-timestamps (ms-epoch), per-message role and agent, **per-message token
-counts** (`message.usage.input_tokens` / `output_tokens` /
-`cache_creation_input_tokens` / `cache_read_input_tokens` map onto OC's
-`tokens.{input,output,cache.{read,write}}`).
-
-**Not migrated:**
-- Cost: CC stores no cost anywhere (`cost_usd` is searched across all
-  32 user JSONLs with zero hits). OC→CC writes cost as an
-  `cost_usd` extension on the assistant JSONL line — CC ignores
-  unknown fields, OC reads them back.
-- Reasoning signatures (CC stores `signature` for replay; OC has no
-  equivalent).
-- `last-prompt` and `attachment` records (CC bookkeeping, no OC analog).
-- Settings, credentials, plugins, daemon state (CC-only).
-
-## What about OC → CC?
-
-`a2migrate` ships both directions in v1. The reverse path:
-- Reads SQLite (`opencode.db`) — sessions, messages, parts, and
-  metadata.
-- Skips OC's synthetic `step-start` / `step-finish` parts (CC has no
-  equivalent — the implicit turn boundary is the user/assistant
-  alternation).
-- Restores tool_use + tool_result pairs from OC's fused `tool` part.
-- Emits JSONL with `parentUuid` / `uuid` / `sessionId` / `timestamp` /
-  `cwd` per entry, plus a `bridge-session` record for subagents
-  pointing at the parent's OC session id.
-- Maps OC subagent metadata back into
-  `~/.claude/projects/<encoded>/<parent-id>/subagents/agent-<id>.jsonl`.
-- Round-trips per-message `tokens` as a `usage` block on the assistant
-  JSONL line, plus `cost_usd` and `completedAt` extension fields.
-
-Artifacts go file-by-file (singular → plural directory rename, mcp{}
-→ mcpServers{} transform).
-
-## Sync
-
-`a2migrate sync` reconciles CC and OC state in place. Two halves:
-
-| Subcommand | Mechanism |
-|---|---|
-| `sync artifacts` | mtime last-writer-wins per file. Files present on only one side propagate to the other. Mtime is preserved across copies so re-runs are no-ops. |
-| `sync sessions` | For each migrated session, parse CC + OC, find messages whose `ccOriginID` doesn't already exist in OC, append them. |
-| `sync reverse` | Same as `sync sessions` but in the opposite direction: append OC-only messages back into the CC JSONL. |
-| `sync all` | Artifacts + sessions in both directions. |
-
-All four are idempotent. Use `--dry-run` to preview. Use `--direction prefer-cc` / `--direction prefer-oc` to bias artifact sync.
+- You're a Claude Code only user with no plans to try OpenCode. Stop here.
+- You want a bidirectional mirror server. `a2migrate` runs on demand;
+  it does not watch files in real time. (Use `sync` periodically
+  instead, or hook it into your session-end hooks.)
+- You need full fidelity, byte-for-byte transcript replay. Some
+  metadata (signatures, queue ops, raw attachment blobs) is dropped
+  in both directions.
 
 ## Development
 
-```
+```sh
 make build         # produces ./a2migrate
-make test          # runs the suite
-make test-race     # race detector
-make lint          # go vet
-make cover         # coverage report
+make test         # runs the suite
+make test-race    # race detector
+make lint         # go vet
+make cover        # coverage report (output: coverage.html)
 ```
 
-Cross-platform CI matrix on Linux / macOS / Windows, Go 1.23 + 1.24.
+Layout (see `architecture.md` for the full version):
+
+```
+cmd/a2migrate/         entry point
+internal/cli/          cobra commands, flags, printing
+internal/migrate/      orchestration: discovery → plan → apply
+internal/source/       readers (CC JSONL, OC SQLite + artifact files)
+internal/target/       writers (OC SQLite + artifact files)
+internal/domain/       pure data types (no IO)
+internal/sync/         bidirectional reconciler
+internal/interactive/  bubbletea multi-select picker
+internal/logging/      slog setup
+internal/platform/     OS paths, atomic file IO
+internal/version/      build-time info
+```
 
 ## License
 
