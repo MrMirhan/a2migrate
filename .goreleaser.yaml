@@ -5,8 +5,9 @@
 #   1. Tag a release:  git tag -s v0.1.0 -m "..."
 #   2. Push the tag:   git push origin v0.1.0
 #   3. The release workflow runs GoReleaser, builds 5 OS/arch targets,
-#      produces .tar.gz / .zip archives + .sha256 files, drafts a
-#      GitHub Release from CHANGELOG.md entries, attaches binaries.
+#      produces .tar.gz / .zip archives + a SHA256SUMS file, writes the
+#      GitHub Release with notes generated from the commit log, attaches
+#      the binaries, and pushes the Homebrew cask to the tap.
 
 version: 2
 
@@ -82,9 +83,11 @@ snapshot:
   version_template: "{{ incpatch .Version }}-next"
 
 changelog:
-  # Conventional commits parsed automatically.
-  # Disable if your release commits don't follow the spec.
+  # Builds the GitHub Release notes from conventional commit subjects.
+  # This does NOT touch CHANGELOG.md in the repo — that file is
+  # maintained by hand and ships inside the archives.
   use: git
+  abbrev: 7
   filters:
     exclude:
       - "^docs:"
@@ -116,7 +119,6 @@ changelog:
     - title: Other
       order: 7
 
-# GitHub release notes sourced from CHANGELOG.md diff.
 release:
   github:
     owner: MrMirhan
