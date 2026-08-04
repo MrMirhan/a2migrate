@@ -154,6 +154,10 @@ a2migrate
 │   ├── sessions             CC → OC, append-only
 │   └── reverse              OC → CC, append-only
 │
+├── tools                    list known AI CLIs (registry surface)
+│   ├── list
+│   └── show <id>            paths + capabilities for one tool
+│
 └── version
 ```
 
@@ -208,6 +212,28 @@ XDG Base Directory spec is followed on Linux. macOS uses
 - You need full fidelity, byte-for-byte transcript replay. Some
   metadata (signatures, queue ops, raw attachment blobs) is dropped
   in both directions.
+
+## Future plans
+
+The tool registry (`a2migrate tools list`) shows what's wired today and
+what's planned:
+
+| Tool | Sessions | Skills | Commands | Agents | Rules | MCP | System prompt |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| Claude Code, OpenCode | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Codex, Qwen Code, Gemini CLI, Factory Droid | planned | | | | | | |
+
+Source/target stubs for the four planned tools exist under
+`internal/source/<tool>/` and `internal/target/<tool>/` — the layout
+is in place; only the per-tool format parsers remain.
+
+Multi-endpoint sync: `internal/config/` ships the schema
+(`a2migrate.toml`, version 1) and the example file is at
+`example.toml`. The `a2migrate remote sync` command is the next
+to land; for now single-machine migration + sync works.
+
+See `ROADMAP.md` for the full v0.2 → v0.4 plan including the work
+required for each new tool adapter.
 
 ## Development
 
