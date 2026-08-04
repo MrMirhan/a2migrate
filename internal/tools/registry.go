@@ -11,10 +11,10 @@
 //
 // When adding a new tool:
 //
-//	1. Append an entry to knownTools with its paths and capabilities.
-//	2. Create internal/source/<tool> and internal/target/<tool>.
-//	3. Cover the tool's artifacts in the orchestrators (migrate, sync).
-//	4. Update ROADMAP.md and the capabilities matrix in README.md.
+//  1. Append an entry to knownTools with its paths and capabilities.
+//  2. Create internal/source/<tool> and internal/target/<tool>.
+//  3. Cover the tool's artifacts in the orchestrators (migrate, sync).
+//  4. Update ROADMAP.md and the capabilities matrix in README.md.
 //
 // Don't make this registry a megafunction — keep it declarative. New
 // metadata should be a struct literal in knownTools, not a hard-coded
@@ -37,13 +37,13 @@ type ID string
 type Capability string
 
 const (
-	CapSessions       Capability = "sessions"
-	CapSkills         Capability = "skills"
-	CapCommands       Capability = "commands"
-	CapAgents         Capability = "agents"
-	CapRules          Capability = "rules"
-	CapMCP            Capability = "mcp"
-	CapSystemPrompt  Capability = "system_prompt"
+	CapSessions     Capability = "sessions"
+	CapSkills       Capability = "skills"
+	CapCommands     Capability = "commands"
+	CapAgents       Capability = "agents"
+	CapRules        Capability = "rules"
+	CapMCP          Capability = "mcp"
+	CapSystemPrompt Capability = "system_prompt"
 )
 
 // Tool describes one AI coding CLI.
