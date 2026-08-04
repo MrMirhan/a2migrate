@@ -140,6 +140,11 @@ release:
   format: tarball
 
 # brew tap configuration — uncomment to enable.
+#
+# Prerequisites, or the release job fails: a MrMirhan/homebrew-tap repo
+# must exist, and the workflow needs a token with write access to it
+# (HOMEBREW_TAP_GITHUB_TOKEN). Until both are in place this stays off
+# and README documents go install instead.
 # brews:
 #   - name: a2migrate
 #     repository:

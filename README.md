@@ -63,10 +63,20 @@ support; naming some (`skills agents`) limits the run to those.
 
 ## Install
 
-### Homebrew (macOS/Linux)
+### `go install`
+
+Requires Go 1.25+.
 
 ```sh
-brew install MrMirhan/tap/a2migrate
+go install github.com/mirhan/a2migrate/cmd/a2migrate@latest
+```
+
+### Build from source
+
+```sh
+git clone https://github.com/MrMirhan/a2migrate
+cd a2migrate
+make build          # produces ./a2migrate
 ```
 
 ### Download a binary
@@ -89,17 +99,13 @@ sudo mv a2migrate /usr/local/bin/
 a2migrate version
 ```
 
-### `go install`
-
-```sh
-go install github.com/mirhan/a2migrate/cmd/a2migrate@latest
-```
+Checksums are published alongside as `a2migrate_<version>_SHA256SUMS`.
 
 ### Verify
 
 ```sh
 a2migrate version
-# a2migrate v0.1.0 (commit ..., built ..., linux/amd64, go1.24)
+# a2migrate v0.1.0 (commit ..., built ..., linux/amd64, go1.25)
 ```
 
 ## Features
