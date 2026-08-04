@@ -9,9 +9,17 @@ import (
 	"github.com/mirhan/a2migrate/internal/logging"
 )
 
+// RootLogger is the slog logger the root command was last configured
+// with. Tests inspect it to assert pre-run hook ordering.
+var RootLogger = slog.Default()
+
 // NewRootCmd constructs the root command and attaches all subcommands.
 // Logging is injected so subcommands can decorate logs with command context.
 func NewRootCmd(logger *slog.Logger) *cobra.Command {
+	if logger != nil {
+		RootLogger = logger
+	}
+
 	root := &cobra.Command{
 		Use:           "a2migrate",
 		Short:         "Migrate AI coding session state between agents",
@@ -20,7 +28,6 @@ func NewRootCmd(logger *slog.Logger) *cobra.Command {
 		SilenceErrors: true,
 	}
 
-	// Global flags
 	var (
 		verbose   bool
 		noColor   bool
@@ -67,10 +74,5 @@ func NewRootCmd(logger *slog.Logger) *cobra.Command {
 	root.AddCommand(newSyncCmd())
 	root.AddCommand(newVersionCmd())
 
-	if logger == nil {
-		// Defensive default if a caller forgets to inject.
-		logger = slog.Default()
-	}
-	_ = logger
 	return root
 }

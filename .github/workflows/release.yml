@@ -41,11 +41,11 @@ jobs:
             echo "tag=$(git describe --tags --abbrev=0)" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Run GoReleaser (dry-run on manual dispatch unless explicitly released)
+      - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
-          version: latest
-          distribution: goreleaser-pro   # free OSS version
+          version: v2.7.2   # pinned; bump via PR after testing
+          distribution: goreleaser   # OSS build
           args: release --clean --skip=sign
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

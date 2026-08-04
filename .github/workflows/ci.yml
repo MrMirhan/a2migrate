@@ -77,7 +77,7 @@ jobs:
           cache: true
       - uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          version: v2.12.2   # pinned for reproducibility
           args: --timeout=5m
 
   build:
@@ -95,3 +95,40 @@ jobs:
         run: ./a2migrate version
       - name: help smoke test
         run: ./a2migrate --help
+
+  goreleaser:
+    # Dry-run GoReleaser's release pipeline on every push so we catch
+    # build/ldflag/CGO regressions before tagging. Pin goreleaser to a
+    # specific version for reproducibility.
+    name: goreleaser snapshot
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+      - name: Install goreleaser
+        run: |
+          curl -sfL https://goreleaser.com/static/install | sh -s -- -b /usr/local/bin v2.7.2
+          goreleaser --version
+      - name: Validate config
+        run: goreleaser check
+      - name: Build snapshot
+        # --skip=publish so we don't touch the release.
+        # --skip=announce, --skip=vcs so we don't need a clean git tag.
+        run: goreleaser release --snapshot --skip=publish,announce,vcs,validate --clean
+      - name: List built artifacts
+        run: ls -la dist/
+      - name: Smoke test the Linux binary
+        run: ./dist/a2migrate_linux_amd64_v1/a2migrate version
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: a2migrate-snapshot
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
