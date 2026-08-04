@@ -10,10 +10,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/mirhan/a2migrate/internal/domain"
-	"github.com/mirhan/a2migrate/internal/source/claudecode"
-	ocsrc "github.com/mirhan/a2migrate/internal/source/opencode"
-	"github.com/mirhan/a2migrate/internal/target/opencode"
+	"github.com/MrMirhan/a2migrate/internal/domain"
+	"github.com/MrMirhan/a2migrate/internal/source/claudecode"
+	ocsrc "github.com/MrMirhan/a2migrate/internal/source/opencode"
+	"github.com/MrMirhan/a2migrate/internal/target/opencode"
 )
 
 // Sessions syncs every CC session that has an OC mirror into OC,

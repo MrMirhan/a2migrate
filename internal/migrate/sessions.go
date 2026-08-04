@@ -15,9 +15,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mirhan/a2migrate/internal/domain"
-	"github.com/mirhan/a2migrate/internal/source/claudecode"
-	"github.com/mirhan/a2migrate/internal/target/opencode"
+	"github.com/MrMirhan/a2migrate/internal/domain"
+	"github.com/MrMirhan/a2migrate/internal/source/claudecode"
+	"github.com/MrMirhan/a2migrate/internal/target/opencode"
 )
 
 // Direction selects which side of a one-shot migration is the source and

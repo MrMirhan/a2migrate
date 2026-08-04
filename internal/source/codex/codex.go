@@ -24,8 +24,8 @@ import (
 	"errors"
 	"os"
 
-	"github.com/mirhan/a2migrate/internal/domain"
-	"github.com/mirhan/a2migrate/internal/platform"
+	"github.com/MrMirhan/a2migrate/internal/domain"
+	"github.com/MrMirhan/a2migrate/internal/platform"
 )
 
 // SessionsPath returns the directory Codex writes session JSONL files

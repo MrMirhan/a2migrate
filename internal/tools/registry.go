@@ -27,7 +27,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/mirhan/a2migrate/internal/platform"
+	"github.com/MrMirhan/a2migrate/internal/platform"
 )
 
 // ID is the canonical short name for a tool.

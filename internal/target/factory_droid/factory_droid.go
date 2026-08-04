@@ -4,7 +4,7 @@ package factory_droid
 import (
 	"errors"
 
-	"github.com/mirhan/a2migrate/internal/domain"
+	"github.com/MrMirhan/a2migrate/internal/domain"
 )
 
 type SkillWriter struct{ Home string }

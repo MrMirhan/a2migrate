@@ -20,9 +20,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mirhan/a2migrate/internal/domain"
-	"github.com/mirhan/a2migrate/internal/platform"
-	"github.com/mirhan/a2migrate/internal/target/opencode"
+	"github.com/MrMirhan/a2migrate/internal/domain"
+	"github.com/MrMirhan/a2migrate/internal/platform"
+	"github.com/MrMirhan/a2migrate/internal/target/opencode"
 )
 
 // SessionReader reads sessions from an OpenCode database.

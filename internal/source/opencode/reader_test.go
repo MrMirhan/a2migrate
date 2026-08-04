@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mirhan/a2migrate/internal/domain"
+	"github.com/MrMirhan/a2migrate/internal/domain"
 )
 
 func newTestOCDB(t *testing.T) (dbPath string, cleanup func()) {

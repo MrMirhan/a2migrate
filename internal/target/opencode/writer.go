@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/mirhan/a2migrate/internal/domain"
+	"github.com/MrMirhan/a2migrate/internal/domain"
 )
 
 // Plan is the in-memory description of all rows that an Apply will insert.

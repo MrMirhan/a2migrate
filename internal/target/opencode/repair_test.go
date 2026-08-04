@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/mirhan/a2migrate/internal/domain"
+	"github.com/MrMirhan/a2migrate/internal/domain"
 )
 
 // seedPlan writes a plan with custom message data so we can test repair.

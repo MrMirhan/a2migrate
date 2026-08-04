@@ -24,7 +24,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mirhan/a2migrate/internal/tools"
+	"github.com/MrMirhan/a2migrate/internal/tools"
 )
 
 // decodedFile is the in-memory form produced by parseTOML.

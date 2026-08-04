@@ -13,7 +13,7 @@ package qwen_code
 import (
 	"errors"
 
-	"github.com/mirhan/a2migrate/internal/domain"
+	"github.com/MrMirhan/a2migrate/internal/domain"
 )
 
 func ReadGlobalSkills() ([]domain.Skill, error) {

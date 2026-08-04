@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mirhan/a2migrate/internal/domain"
+	"github.com/MrMirhan/a2migrate/internal/domain"
 )
 
 func TestSanitizeFilename(t *testing.T) {

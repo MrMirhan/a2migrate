@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mirhan/a2migrate/internal/platform"
-	"github.com/mirhan/a2migrate/internal/source/claudecode"
+	"github.com/MrMirhan/a2migrate/internal/platform"
+	"github.com/MrMirhan/a2migrate/internal/source/claudecode"
 )
 
 // TestArtifactsMigrator_SystemPrompt migrates ~/.claude/CLAUDE.md to

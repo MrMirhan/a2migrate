@@ -12,9 +12,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mirhan/a2migrate/internal/cli"
-	"github.com/mirhan/a2migrate/internal/logging"
-	"github.com/mirhan/a2migrate/internal/version"
+	"github.com/MrMirhan/a2migrate/internal/cli"
+	"github.com/MrMirhan/a2migrate/internal/logging"
+	"github.com/MrMirhan/a2migrate/internal/version"
 )
 
 func main() {

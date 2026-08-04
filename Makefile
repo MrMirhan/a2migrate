@@ -5,7 +5,7 @@ PKG := ./cmd/a2migrate
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 
 build:
-	go build -ldflags "-X github.com/mirhan/a2migrate/internal/version.Version=$(VERSION)" -o $(BIN) $(PKG)
+	go build -ldflags "-X github.com/MrMirhan/a2migrate/internal/version.Version=$(VERSION)" -o $(BIN) $(PKG)
 
 install:
 	go install $(PKG)

@@ -6,7 +6,7 @@ import (
 	"runtime"
 )
 
-// Set at build time via -ldflags "-X github.com/mirhan/a2migrate/internal/version.Version=..."
+// Set at build time via -ldflags "-X github.com/MrMirhan/a2migrate/internal/version.Version=..."
 var (
 	Version   = "dev"
 	Commit    = "unknown"

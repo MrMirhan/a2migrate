@@ -20,8 +20,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mirhan/a2migrate/internal/domain"
-	"github.com/mirhan/a2migrate/internal/platform"
+	"github.com/MrMirhan/a2migrate/internal/domain"
+	"github.com/MrMirhan/a2migrate/internal/platform"
 )
 
 // SessionWriter emits JSONL files into a CC projects/ directory.

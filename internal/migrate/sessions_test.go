@@ -3,8 +3,8 @@ package migrate
 import (
 	"testing"
 
-	"github.com/mirhan/a2migrate/internal/domain"
-	"github.com/mirhan/a2migrate/internal/source/claudecode"
+	"github.com/MrMirhan/a2migrate/internal/domain"
+	"github.com/MrMirhan/a2migrate/internal/source/claudecode"
 )
 
 // These tests exercise the migrator wiring without touching real Claude Code

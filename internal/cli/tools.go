@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mirhan/a2migrate/internal/tools"
+	"github.com/MrMirhan/a2migrate/internal/tools"
 )
 
 // newToolsCmd wires `a2migrate tools` — surface the registry so users

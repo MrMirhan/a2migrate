@@ -15,7 +15,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mirhan/a2migrate/internal/platform"
+	"github.com/MrMirhan/a2migrate/internal/platform"
 )
 
 // Direction selects which side wins when both have a file with the same

@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mirhan/a2migrate/internal/platform"
-	syncpkg "github.com/mirhan/a2migrate/internal/sync"
+	"github.com/MrMirhan/a2migrate/internal/platform"
+	syncpkg "github.com/MrMirhan/a2migrate/internal/sync"
 )
 
 // newSyncCmd wires the bidirectional `sync` command tree.

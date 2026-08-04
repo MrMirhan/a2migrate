@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mirhan/a2migrate/internal/migrate"
-	"github.com/mirhan/a2migrate/internal/tools"
+	"github.com/MrMirhan/a2migrate/internal/migrate"
+	"github.com/MrMirhan/a2migrate/internal/tools"
 )
 
 type migrateFlags struct {

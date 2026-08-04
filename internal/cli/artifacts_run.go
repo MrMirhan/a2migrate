@@ -7,8 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mirhan/a2migrate/internal/migrate"
-	"github.com/mirhan/a2migrate/internal/target/opencode"
+	"github.com/MrMirhan/a2migrate/internal/migrate"
+	"github.com/MrMirhan/a2migrate/internal/target/opencode"
 )
 
 func openTargetDB(ctx context.Context, path string) (*sql.DB, error) {

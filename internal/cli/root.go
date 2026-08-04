@@ -6,8 +6,8 @@ import (
 	"github.com/spf13/cobra"
 	"log/slog"
 
-	"github.com/mirhan/a2migrate/internal/logging"
-	"github.com/mirhan/a2migrate/internal/platform"
+	"github.com/MrMirhan/a2migrate/internal/logging"
+	"github.com/MrMirhan/a2migrate/internal/platform"
 )
 
 // RootLogger is the slog logger the root command was last configured

@@ -3,7 +3,7 @@ package cli
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/mirhan/a2migrate/internal/version"
+	"github.com/MrMirhan/a2migrate/internal/version"
 )
 
 func newVersionCmd() *cobra.Command {

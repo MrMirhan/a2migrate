@@ -1,4 +1,4 @@
-module github.com/mirhan/a2migrate
+module github.com/MrMirhan/a2migrate
 
 go 1.25.0
 

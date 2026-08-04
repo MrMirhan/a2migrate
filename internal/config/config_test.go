@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mirhan/a2migrate/internal/tools"
+	"github.com/MrMirhan/a2migrate/internal/tools"
 )
 
 const sampleConfig = `

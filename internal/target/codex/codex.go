@@ -6,7 +6,7 @@ package codex
 import (
 	"errors"
 
-	"github.com/mirhan/a2migrate/internal/domain"
+	"github.com/MrMirhan/a2migrate/internal/domain"
 )
 
 // SkillWriter is a stub.

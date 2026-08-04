@@ -1,6 +1,6 @@
 package opencode
 
-import "github.com/mirhan/a2migrate/internal/domain"
+import "github.com/MrMirhan/a2migrate/internal/domain"
 
 // Type aliases give the render helper a stable interface to type-switch on,
 // without forcing every writer to import domain just to satisfy the same

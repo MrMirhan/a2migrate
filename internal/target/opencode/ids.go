@@ -16,7 +16,7 @@ import (
 	"hash/fnv"
 	"strings"
 
-	"github.com/mirhan/a2migrate/internal/source/claudecode"
+	"github.com/MrMirhan/a2migrate/internal/source/claudecode"
 )
 
 const (

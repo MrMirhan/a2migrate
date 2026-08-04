@@ -3,9 +3,9 @@ package migrate
 import (
 	"fmt"
 
-	"github.com/mirhan/a2migrate/internal/domain"
-	"github.com/mirhan/a2migrate/internal/source/claudecode"
-	"github.com/mirhan/a2migrate/internal/target/opencode"
+	"github.com/MrMirhan/a2migrate/internal/domain"
+	"github.com/MrMirhan/a2migrate/internal/source/claudecode"
+	"github.com/MrMirhan/a2migrate/internal/target/opencode"
 )
 
 // Domain identifies one category of Claude Code artifact that

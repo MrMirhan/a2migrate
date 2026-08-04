@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mirhan/a2migrate/internal/target/opencode"
+	"github.com/MrMirhan/a2migrate/internal/target/opencode"
 )
 
 // TestSessionMigrator_EndToEnd runs the full pipeline against a fixture

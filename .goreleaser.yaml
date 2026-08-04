@@ -29,9 +29,9 @@ builds:
       - -trimpath
     ldflags:
       - -s -w
-      - -X github.com/mirhan/a2migrate/internal/version.Version={{ .Version }}
-      - -X github.com/mirhan/a2migrate/internal/version.Commit={{ .ShortCommit }}
-      - -X github.com/mirhan/a2migrate/internal/version.BuildDate={{ .CommitDate }}
+      - -X github.com/MrMirhan/a2migrate/internal/version.Version={{ .Version }}
+      - -X github.com/MrMirhan/a2migrate/internal/version.Commit={{ .ShortCommit }}
+      - -X github.com/MrMirhan/a2migrate/internal/version.BuildDate={{ .CommitDate }}
     # Pure-Go SQLite is the only CGO surface; disable elsewhere for
     # smaller, more portable binaries.
     goos:

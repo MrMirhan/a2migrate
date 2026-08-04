@@ -26,7 +26,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mirhan/a2migrate/internal/platform"
+	"github.com/MrMirhan/a2migrate/internal/platform"
 )
 
 // ErrNoSessions is returned when DiscoverSessions finds no JSONL files.

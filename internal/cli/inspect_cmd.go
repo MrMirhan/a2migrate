@@ -5,12 +5,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mirhan/a2migrate/internal/domain"
-	"github.com/mirhan/a2migrate/internal/interactive"
-	"github.com/mirhan/a2migrate/internal/migrate"
-	ccsrc "github.com/mirhan/a2migrate/internal/source/claudecode"
-	ocsrc "github.com/mirhan/a2migrate/internal/source/opencode"
-	"github.com/mirhan/a2migrate/internal/tools"
+	"github.com/MrMirhan/a2migrate/internal/domain"
+	"github.com/MrMirhan/a2migrate/internal/interactive"
+	"github.com/MrMirhan/a2migrate/internal/migrate"
+	ccsrc "github.com/MrMirhan/a2migrate/internal/source/claudecode"
+	ocsrc "github.com/MrMirhan/a2migrate/internal/source/opencode"
+	"github.com/MrMirhan/a2migrate/internal/tools"
 )
 
 // namesOf projects a slice of artifacts down to their display names.

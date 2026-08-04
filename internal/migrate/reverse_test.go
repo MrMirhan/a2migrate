@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mirhan/a2migrate/internal/source/opencode"
+	"github.com/MrMirhan/a2migrate/internal/source/opencode"
 )
 
 // seedOCDB creates a fresh OC db, inserts one main + one subagent

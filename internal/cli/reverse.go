@@ -7,11 +7,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mirhan/a2migrate/internal/domain"
-	"github.com/mirhan/a2migrate/internal/migrate"
-	"github.com/mirhan/a2migrate/internal/platform"
-	ocsrc "github.com/mirhan/a2migrate/internal/source/opencode"
-	cctgt "github.com/mirhan/a2migrate/internal/target/claudecode"
+	"github.com/MrMirhan/a2migrate/internal/domain"
+	"github.com/MrMirhan/a2migrate/internal/migrate"
+	"github.com/MrMirhan/a2migrate/internal/platform"
+	ocsrc "github.com/MrMirhan/a2migrate/internal/source/opencode"
+	cctgt "github.com/MrMirhan/a2migrate/internal/target/claudecode"
 )
 
 func printReverseReport(cmd *cobra.Command, r *migrate.ReverseReport) {

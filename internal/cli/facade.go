@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"github.com/mirhan/a2migrate/internal/target/claudecode"
+	"github.com/MrMirhan/a2migrate/internal/target/claudecode"
 )
 
 // platformOpen returns a small facade for writing CC-side artifact files.

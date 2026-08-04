@@ -7,10 +7,10 @@ import (
 	"log/slog"
 	"path/filepath"
 
-	"github.com/mirhan/a2migrate/internal/domain"
-	"github.com/mirhan/a2migrate/internal/platform"
-	"github.com/mirhan/a2migrate/internal/source/opencode"
-	"github.com/mirhan/a2migrate/internal/target/claudecode"
+	"github.com/MrMirhan/a2migrate/internal/domain"
+	"github.com/MrMirhan/a2migrate/internal/platform"
+	"github.com/MrMirhan/a2migrate/internal/source/opencode"
+	"github.com/MrMirhan/a2migrate/internal/target/claudecode"
 )
 
 // ReverseResult is one migrated row.
