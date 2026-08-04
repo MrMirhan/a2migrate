@@ -41,9 +41,10 @@ func NewSessionWriter(ccHome string) *SessionWriter {
 // (native OC session), a fresh ulid-style id is generated and returned
 // via the OriginID field of the written entry.
 //
-// parentID is the OC session id of the parent session when this session
-// is a subagent. Empty for main sessions.
-func (w *SessionWriter) WriteSession(sess domain.Session, parentOCID string) (string, error) {
+// parentOriginID is the parent session's OriginID (CC id), used as the
+// enclosing directory name when this session is a subagent. Empty for
+// main sessions.
+func (w *SessionWriter) WriteSession(sess domain.Session, parentOriginID string) (string, error) {
 	if sess.ProjectDir == "" {
 		return "", fmt.Errorf("session %s: missing project dir", sess.OriginID)
 	}
@@ -58,45 +59,31 @@ func (w *SessionWriter) WriteSession(sess domain.Session, parentOCID string) (st
 		sess.OriginID = origin
 	}
 
-	var subDir string
+	var sessionID string
+	var out string
 	if sess.IsSubagent {
-		subDir = filepath.Join(dir, origin, "subagents")
+		parentDir := parentOriginID
+		if parentDir == "" {
+			parentDir = origin
+		}
+		subDir := filepath.Join(dir, parentDir, "subagents")
 		if err := os.MkdirAll(subDir, 0o755); err != nil {
 			return "", err
 		}
-	}
-
-	var sessionID string
-	if sess.IsSubagent {
-		sessionID = filepath.Base(filepath.Dir(subDir)) // parent session dir name
+		sessionID = parentDir
+		out = filepath.Join(subDir, "agent-"+origin+".jsonl")
 	} else {
 		sessionID = origin
-	}
-
-	var out string
-	if sess.IsSubagent {
-		out = filepath.Join(subDir, "agent-"+origin[len(origin)-min(len(origin), 16):]+".jsonl")
-		if out == subDir+"/agent-.jsonl" {
-			out = filepath.Join(subDir, "agent-"+origin+".jsonl")
-		}
-	} else {
 		out = filepath.Join(dir, origin+".jsonl")
 	}
 
 	if err := os.WriteFile(out, nil, 0o644); err != nil {
 		return "", err
 	}
-	if err := appendJSONL(out, buildJSONL(sess, sessionID, parentOCID)); err != nil {
+	if err := appendJSONL(out, buildJSONL(sess, sessionID, parentOriginID)); err != nil {
 		return "", err
 	}
 	return out, nil
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 // buildJSONL renders the per-line JSON entries that make up a CC session.
