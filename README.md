@@ -1,15 +1,65 @@
 # a2migrate
 
-Migrate AI coding session state between agents.
+**Move your Claude Code sessions, skills, agents, and MCP servers to
+OpenCode — and back.**
 
-`a2migrate` is a Go CLI that ports your Claude Code sessions, skills,
-commands, agents, rules, MCP servers, and top-level instructions between
-OpenCode and Claude Code in both directions. It preserves chat content,
-tool calls, subagent chains, and per-message token usage.
+[![CI](https://github.com/MrMirhan/a2migrate/actions/workflows/ci.yml/badge.svg)](https://github.com/MrMirhan/a2migrate/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/mirhan/a2migrate)](https://goreportcard.com/report/github.com/mirhan/a2migrate)
+[![Go Reference](https://pkg.go.dev/badge/github.com/mirhan/a2migrate.svg)](https://pkg.go.dev/github.com/mirhan/a2migrate)
+[![Go 1.25](https://img.shields.io/badge/go-1.25-00ADD8?logo=go&logoColor=white)](https://go.dev/dl/)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](./LICENSE)
 
-Tools are arguments, not commands: `a2migrate migrate <from> <to>` moves
+Switched AI coding tools and left your chat history behind? `a2migrate`
+is a single Go binary that migrates Claude Code session transcripts —
+the JSONL files under `~/.claude/projects/` — into OpenCode's SQLite
+database and back again, along with your skills, slash commands,
+subagents, rules, MCP servers, and `CLAUDE.md` / `AGENTS.md`
+instructions.
+
+Nothing is lost in transit: assistant reasoning blocks, tool calls with
+their inputs and outputs, subagent chains, and per-message token usage
+all survive the round trip. Every command is idempotent and has a
+`--dry-run`.
+
+Tools are arguments, not commands. `a2migrate migrate <from> <to>` moves
 state one way, swapping the two moves it back, and `sync` keeps both
-sides in lock-step over time. Everything is idempotent.
+sides in lock-step over time.
+
+## Supported tools
+
+| Tool | Status |
+|---|---|
+| [Claude Code](https://claude.com/claude-code) (Anthropic) | migrates both ways today |
+| [OpenCode](https://opencode.ai) | migrates both ways today |
+| Codex, Qwen Code, Gemini CLI, Factory Droid | adapter scaffolding in place, format parsers pending |
+
+Adding a tool does not add commands — it is one registry entry, and
+every verb starts accepting it. See
+[Adding a new target system](./architecture.md#adding-a-new-target-system).
+
+## Quick start
+
+```sh
+# See what would migrate, with zero side effects.
+a2migrate list claude-code sessions
+a2migrate migrate claude-code opencode sessions --dry-run --search "refactor auth"
+
+# Migrate one session (with a timestamped backup before apply).
+a2migrate migrate claude-code opencode sessions --search "bug fix" --backup --yes
+
+# Migrate everything both tools support, in one shot.
+a2migrate migrate claude-code opencode --backup --yes
+
+# Push OC sessions back into CC (e.g. you bounced between tools).
+a2migrate migrate opencode claude-code sessions --yes
+
+# Keep both sides in sync after every session ends.
+a2migrate sync
+```
+
+`cc` and `oc` are accepted as shortcuts, so `a2migrate migrate cc oc` is
+the same thing. Naming no domains migrates every domain both tools
+support; naming some (`skills agents`) limits the run to those.
 
 ## Install
 
@@ -51,30 +101,6 @@ go install github.com/mirhan/a2migrate/cmd/a2migrate@latest
 a2migrate version
 # a2migrate v0.1.0 (commit ..., built ..., linux/amd64, go1.24)
 ```
-
-## Quick start
-
-```sh
-# See what would migrate, with zero side effects.
-a2migrate list claude-code sessions
-a2migrate migrate claude-code opencode sessions --dry-run --search "refactor auth"
-
-# Migrate one session (with a timestamped backup before apply).
-a2migrate migrate claude-code opencode sessions --search "bug fix" --backup --yes
-
-# Migrate everything both tools support, in one shot.
-a2migrate migrate claude-code opencode --backup --yes
-
-# Push OC sessions back into CC (e.g. you bounced between tools).
-a2migrate migrate opencode claude-code sessions --yes
-
-# Keep both sides in sync after every session ends.
-a2migrate sync
-```
-
-`cc` and `oc` are accepted as shortcuts, so `a2migrate migrate cc oc` is
-the same thing. Naming no domains migrates every domain both tools
-support; naming some (`skills agents`) limits the run to those.
 
 ## Features
 
@@ -227,10 +253,54 @@ is authoritative and you want the other to match it right now.
   metadata (signatures, queue ops, raw attachment blobs) is dropped
   in both directions.
 
+## FAQ
+
+**Why not just copy the files myself?**
+The two tools do not share a storage format. Claude Code keeps one JSONL
+file per session under `~/.claude/projects/<encoded-cwd>/`; OpenCode
+keeps rows in a SQLite database (`opencode.db`) with separate `session`,
+`message`, and `part` tables. Copying files across gets you nothing
+readable. `a2migrate` translates the record shapes, rewrites ids,
+rebuilds subagent parent links, and applies the invariants OpenCode's
+renderer needs before a transcript will display at all.
+
+**Will it overwrite or corrupt my existing sessions?**
+No. Already-migrated sessions are detected via `claude_code_origin`
+metadata and skipped, so re-running is a no-op. Writes into OpenCode run
+in a single SQL transaction. Use `--dry-run` to see the plan with zero
+side effects, and `--backup` to snapshot the target first — the SQLite
+file for OpenCode, or every JSONL file about to be overwritten for
+Claude Code.
+
+**Does it send my transcripts anywhere?**
+No. There is no network code and no telemetry. Everything runs against
+local files.
+
+**Can I use both tools at once instead of migrating once?**
+Yes — that is what `sync` is for. `migrate` copies when one side is
+authoritative; `sync` reconciles when both sides keep changing. Sessions
+are deduplicated by uuid, so appends never double up.
+
+**What about my subagent chains?**
+Preserved in both directions. Claude Code nests them as
+`projects/<cwd>/<parent>/subagents/agent-*.jsonl`; OpenCode links them
+via `session.parent_id`. Selecting a parent session with `--include`
+automatically brings its subagents along, so a chain is never orphaned.
+
+**Do I lose token usage or cost data?**
+Token counts survive both ways (`message.usage` ↔ `message.data.tokens`).
+Cost is OpenCode-only, so it is carried into Claude Code as a `cost_usd`
+extension field and has no source on the way out. See
+[What gets preserved](#what-gets-preserved) for the full matrix,
+including what is dropped.
+
+**Windows?**
+Yes. Pure-Go SQLite, no CGo. Linux, macOS, and Windows on amd64 and
+arm64.
+
 ## Future plans
 
-The tool registry (`a2migrate tools list`) shows what's wired today and
-what's planned:
+`a2migrate tools list` prints this matrix from the registry, per domain:
 
 | Tool | Sessions | Skills | Commands | Agents | Rules | MCP | System prompt |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
@@ -245,8 +315,8 @@ Multi-endpoint sync: `internal/config/` ships the schema for the
 future `a2migrate remote sync` command. For now single-machine migration
 + sync works.
 
-See `ROADMAP.md` for the full v0.2 → v0.4 plan including the work
-required for each new tool adapter.
+See [ROADMAP.md](./ROADMAP.md) for the full v0.2 → v0.4 plan including
+the work required for each new tool adapter.
 
 ## Development
 
