@@ -25,6 +25,8 @@ Tools are arguments, not commands. `a2migrate migrate <from> <to>` moves
 state one way, swapping the two moves it back, and `sync` keeps both
 sides in lock-step over time.
 
+![a2migrate migrating a session from Claude Code to OpenCode and back](demo/demo.gif)
+
 ## Supported tools
 
 | Tool | Status |
