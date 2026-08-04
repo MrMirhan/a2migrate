@@ -115,7 +115,7 @@ func TestSessionWriter_WriteSubagent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out, "/subagents/agent-") {
+	if !strings.Contains(filepath.ToSlash(out), "/subagents/agent-") {
 		t.Fatalf("path %s not in subagents dir", out)
 	}
 	body, _ := os.ReadFile(out)
@@ -229,7 +229,7 @@ func TestCommandWriter_WriteProject(t *testing.T) {
 	if len(written) != 1 {
 		t.Fatalf("written = %d want 1", len(written))
 	}
-	if !strings.Contains(written[0], "/commands/") {
+	if !strings.Contains(filepath.ToSlash(written[0]), "/commands/") {
 		t.Fatalf("path %s not in commands/", written[0])
 	}
 }

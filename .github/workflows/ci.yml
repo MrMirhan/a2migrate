@@ -30,6 +30,7 @@ jobs:
       - name: Build
         run: go build ./...
       - name: Test (race + cover)
+        shell: bash
         run: go test -race -coverprofile=coverage.txt ./...
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest' && matrix.go == '1.25'
@@ -75,7 +76,7 @@ jobs:
         with:
           go-version: '1.25'
           cache: true
-      - uses: golangci/golangci-lint-action@v6
+      - uses: golangci/golangci-lint-action@v7
         with:
           version: v2.12.2   # pinned for reproducibility
           args: --timeout=5m
@@ -112,9 +113,10 @@ jobs:
           go-version: '1.25'
           cache: true
       - name: Install goreleaser
-        run: |
-          curl -sfL https://goreleaser.com/static/install | sh -s -- -b /usr/local/bin v2.17.1
-          goreleaser --version
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: v2.17.1
+          install-only: true
       - name: Validate config
         run: goreleaser check
       - name: Build snapshot
