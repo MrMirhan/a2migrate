@@ -34,6 +34,7 @@ type ReverseReport struct {
 	Successes  int
 	Failures   int
 	Skipped    int
+	BackupDir  string
 	Results    []ReverseResult
 }
 
@@ -116,6 +117,10 @@ func (m *ReverseMigrator) Run(ctx context.Context, refs []opencode.SessionRef) (
 	defer func() { _ = db.Close() }()
 
 	writer := claudecode.NewSessionWriter(m.Options.To)
+	if !m.Options.DryRun && m.Options.BackupDir != "" {
+		writer.BackupDir = m.Options.BackupDir
+		rep.BackupDir = m.Options.BackupDir
+	}
 
 	// First pass: parse main sessions.
 	mainOCIDByOrigin := map[string]string{}

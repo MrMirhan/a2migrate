@@ -18,6 +18,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/mirhan/a2migrate/internal/domain"
 	"github.com/mirhan/a2migrate/internal/platform"
@@ -26,6 +27,36 @@ import (
 // SessionWriter emits JSONL files into a CC projects/ directory.
 type SessionWriter struct {
 	CCHome string
+
+	// BackupDir, when set, receives a copy of every JSONL file this
+	// writer is about to overwrite. Unlike the OpenCode target there is
+	// no single database file to snapshot, so backups happen per file.
+	BackupDir string
+}
+
+// BackupFile copies src into dstDir, mirroring its path relative to
+// root so files with the same name in different projects cannot
+// collide. Missing sources are a no-op, matching opencode.Backup.
+func BackupFile(src, root, dstDir string) (string, error) {
+	if _, err := os.Stat(src); err != nil {
+		return "", nil
+	}
+	rel, err := filepath.Rel(root, src)
+	if err != nil {
+		rel = filepath.Base(src)
+	}
+	dst := filepath.Join(dstDir, rel+".bak-"+time.Now().UTC().Format("20060102-150405"))
+	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+		return "", err
+	}
+	body, err := os.ReadFile(src)
+	if err != nil {
+		return "", err
+	}
+	if err := os.WriteFile(dst, body, 0o644); err != nil {
+		return "", err
+	}
+	return dst, nil
 }
 
 // NewSessionWriter returns a writer rooted at the platform default CC home.
@@ -82,6 +113,11 @@ func (w *SessionWriter) WriteSession(sess domain.Session, parentOriginID string)
 		out = filepath.Join(dir, origin+".jsonl")
 	}
 
+	if w.BackupDir != "" {
+		if _, err := BackupFile(out, w.CCHome, w.BackupDir); err != nil {
+			return "", fmt.Errorf("backup: %w", err)
+		}
+	}
 	if err := os.WriteFile(out, nil, 0o644); err != nil {
 		return "", err
 	}
