@@ -65,6 +65,12 @@ support; naming some (`skills agents`) limits the run to those.
 
 ## Install
 
+### Homebrew (macOS/Linux)
+
+```sh
+brew install MrMirhan/tap/a2migrate
+```
+
 ### `go install`
 
 Requires Go 1.25+.

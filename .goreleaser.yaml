@@ -143,20 +143,30 @@ release:
     `Darwin_x86_64`, or `Windows_x86_64` as needed. Verify against
     `a2migrate_{{ .Version }}_SHA256SUMS`.
 
-# brew tap configuration — uncomment to enable.
+# Homebrew formula, pushed to a separate tap repo on every release.
 #
-# Prerequisites, or the release job fails: a MrMirhan/homebrew-tap repo
-# must exist, and the workflow needs a token with write access to it
-# (HOMEBREW_TAP_GITHUB_TOKEN). Until both are in place this stays off
-# and README documents go install instead.
-# brews:
-#   - name: a2migrate
-#     repository:
-#       owner: MrMirhan
-#       name: homebrew-tap
-#     homepage: https://github.com/MrMirhan/a2migrate
-#     description: "Migrate AI coding session state between agents."
-#     goarm: "*"
+# Two prerequisites, or the release job fails:
+#   1. github.com/MrMirhan/homebrew-tap must exist (empty is fine).
+#   2. HOMEBREW_TAP_GITHUB_TOKEN must be a repo secret holding a token
+#      with contents:write on that tap. The workflow's built-in
+#      GITHUB_TOKEN cannot push to a different repository.
+brews:
+  - name: a2migrate
+    repository:
+      owner: MrMirhan
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Formula
+    homepage: "https://github.com/MrMirhan/a2migrate"
+    description: "Migrate AI coding sessions, skills, agents, and MCP servers between Claude Code and OpenCode."
+    license: "Apache-2.0"
+    commit_author:
+      name: MrMirhan
+      email: hamzaalmendi@gmail.com
+    install: |
+      bin.install "a2migrate"
+    test: |
+      system "#{bin}/a2migrate", "version"
 
 # scoop manifest configuration — uncomment to enable.
 # scoops:
