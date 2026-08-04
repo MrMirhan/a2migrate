@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/mirhan/a2migrate/internal/interactive"
 	"github.com/mirhan/a2migrate/internal/migrate"
 	"github.com/mirhan/a2migrate/internal/platform"
 	"github.com/mirhan/a2migrate/internal/source/claudecode"
@@ -145,7 +146,35 @@ func newSessionsSelectCmd() *cobra.Command {
 		Use:   "select",
 		Short: "Interactively select sessions to migrate",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			fmt.Fprintln(cmd.OutOrStdout(), "interactive selection not implemented in this build; use `sessions list` + `--include` for now")
+			m := migrate.NewSessionMigrator(migrate.Options{})
+			refs, err := m.Discover(cmd.Context())
+			if err != nil {
+				return err
+			}
+			items := make([]interactive.Item, 0, len(refs))
+			for _, r := range refs {
+				title := r.OriginID
+				if r.IsSubagent {
+					title = "↳ " + r.OriginID
+				}
+				items = append(items, interactive.Item{
+					Title:    title,
+					Subtitle: r.Worktree,
+					ID:       r.OriginID,
+					Sub:      r.IsSubagent,
+				})
+			}
+			picked, err := interactive.Run(items, cmd.InOrStdin(), cmd.OutOrStdout())
+			if err != nil {
+				return err
+			}
+			if picked == nil {
+				fmt.Fprintln(cmd.OutOrStdout(), "non-interactive: use --include/--search instead")
+				return nil
+			}
+			for _, it := range picked {
+				fmt.Fprintf(cmd.OutOrStdout(), "selected: %s\n", it.ID)
+			}
 			return nil
 		},
 	}
