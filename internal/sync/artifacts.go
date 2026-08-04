@@ -24,9 +24,9 @@ import (
 type Direction string
 
 const (
-	NewerWins  Direction = "newer"
-	PreferCC   Direction = "prefer-cc"
-	PreferOC   Direction = "prefer-oc"
+	NewerWins Direction = "newer"
+	PreferCC  Direction = "prefer-cc"
+	PreferOC  Direction = "prefer-oc"
 )
 
 // Plan describes one sync operation.
@@ -60,19 +60,19 @@ const (
 
 // Result summarizes one executed sync.
 type Result struct {
-	Op        Op
-	Path      string
-	Bytes     int64
+	Op    Op
+	Path  string
+	Bytes int64
 }
 
 // Report aggregates everything sync produced.
 type Report struct {
-	Plan        Plan
-	Applied     []Result
-	Errors      []error
-	Skipped     int
-	CCHome      string
-	OCHome      string
+	Plan    Plan
+	Applied []Result
+	Errors  []error
+	Skipped int
+	CCHome  string
+	OCHome  string
 }
 
 // SyncArtifacts reconciles the file artifacts (skills, commands, agents,
@@ -222,7 +222,7 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		return err
 	}
@@ -230,7 +230,7 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 	if _, err := io.Copy(out, in); err != nil {
 		return err
 	}

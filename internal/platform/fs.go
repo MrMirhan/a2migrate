@@ -79,7 +79,7 @@ func CopyFile(src, dst string, overwrite bool) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 
 	if !overwrite {
 		if _, err := os.Stat(dst); err == nil {
@@ -100,7 +100,7 @@ func CopyFile(src, dst string, overwrite bool) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 
 	if _, err := io.Copy(out, in); err != nil {
 		return err

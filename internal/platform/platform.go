@@ -80,18 +80,6 @@ func configDir() string {
 	}
 }
 
-// stateDir returns the OS-specific per-user state directory root.
-func stateDir() string {
-	switch Current() {
-	case Windows:
-		return EnvOr("LocalAppData", filepath.Join(Home(), "AppData", "Local"))
-	case Darwin:
-		return filepath.Join(Home(), "Library", "Application Support")
-	default:
-		return EnvOr("XDG_STATE_HOME", filepath.Join(Home(), ".local", "state"))
-	}
-}
-
 // ClaudeCodeHome returns the root of Claude Code's state directory.
 // Override with $CLAUDE_CODE_HOME.
 func ClaudeCodeHome() string {

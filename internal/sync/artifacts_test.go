@@ -214,9 +214,11 @@ func TestReconcileOne_DryRun(t *testing.T) {
 	if len(r.Applied) != 1 {
 		t.Fatalf("applied = %d want 1", len(r.Applied))
 	}
-	// Verify nothing was written.
-	if _, err := os.Stat(filepath.Join(dir, "")); err == nil {
-		// Empty dst path — no file written anywhere.
+	// Verify nothing was written under dir — the empty path
+	// Resolve(".","") produces no real file, so any non-error
+	// Stat here would indicate a bug in dry-run.
+	if _, err := os.Stat(dir); err != nil {
+		t.Fatalf("stat %s: %v", dir, err)
 	}
 }
 

@@ -56,7 +56,7 @@ func TestSessionMigrator_EndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	var nSessions, nMessages int
 	if err := db.QueryRowContext(context.Background(), "SELECT COUNT(*) FROM session").Scan(&nSessions); err != nil {

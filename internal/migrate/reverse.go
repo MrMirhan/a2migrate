@@ -22,26 +22,26 @@ type ReverseOptions struct {
 	Includes   []string // OC session ids to include
 	Excludes   []string // OC session ids to skip
 	Search     string
-	SkipNative bool   // skip sessions without claude_code_origin
+	SkipNative bool // skip sessions without claude_code_origin
 	Logger     *slog.Logger
 }
 
 // ReverseResult is one migrated row.
 type ReverseResult struct {
-	OCSessionID string
-	OriginID    string // CC origin id (if migrated from CC) or generated
-	Title       string
-	ProjectDir  string
-	OutputPath  string
-	IsSubagent  bool
-	Skipped     bool
+	OCSessionID   string
+	OriginID      string // CC origin id (if migrated from CC) or generated
+	Title         string
+	ProjectDir    string
+	OutputPath    string
+	IsSubagent    bool
+	Skipped       bool
 	SkippedReason string
-	Error       error
+	Error         error
 }
 
 // ReverseReport summarises an OC → CC migration run.
 type ReverseReport struct {
-	DryRun    bool
+	DryRun     bool
 	Discovered int
 	Selected   int
 	Successes  int
@@ -75,7 +75,7 @@ func (m *ReverseMigrator) Discover(ctx context.Context) ([]opencode.SessionRef, 
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	refs, err := m.Source.DiscoverSessions(ctx, db)
 	if err != nil {
 		return nil, err
@@ -123,7 +123,7 @@ func (m *ReverseMigrator) Run(ctx context.Context, refs []opencode.SessionRef) (
 	if err != nil {
 		return rep, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	writer := claudecode.NewSessionWriter(m.Options.To)
 
@@ -276,7 +276,7 @@ func VerifyReverse(ctx context.Context, dbPath string) (*ReverseVerifyReport, er
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	refs, err := r.DiscoverSessions(ctx, db)
 	if err != nil {
 		return nil, err

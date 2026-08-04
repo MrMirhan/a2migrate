@@ -10,14 +10,14 @@ type osEntry = struct {
 	IsDir bool
 }
 
-func doMkdirAll(p string) error { return os.MkdirAll(p, 0o755) }
+func doMkdirAll(p string) error        { return os.MkdirAll(p, 0o755) }
 func doWriteFile(p, body string) error { return os.WriteFile(p, []byte(body), 0o644) }
 func doAppend(p, body string) error {
 	f, err := os.OpenFile(p, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0o644)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	_, err = f.WriteString(body)
 	return err
 }

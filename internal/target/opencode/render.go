@@ -86,16 +86,6 @@ func renderStringSlice(xs []string) string {
 // extractName / extractBody are reflection-free helpers using type switches
 // over the small union of markdown-writeable items.
 
-type nameBoday interface {
-	GetName() string
-	GetBody() string
-}
-
-type cmdLike interface {
-	GetName() string
-	GetBody() string
-}
-
 // extractName returns the canonical name field for any of the supported
 // writer item types.
 func extractName(v any) string {

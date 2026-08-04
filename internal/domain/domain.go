@@ -186,11 +186,11 @@ func (m MCPServer) IsLocal() bool { return m.Type == "local" || m.URL == "" }
 // Hook is one lifecycle event hook from Claude Code settings.json.
 // Stored structurally; a2migrate only reports these — OC plugins are manual.
 type Hook struct {
-	Event    string // PreToolUse | PostToolUse | SessionStart | UserPromptSubmit | Stop | ...
-	Matcher  string
-	Command  string
-	Timeout  int
-	Type     string
+	Event   string // PreToolUse | PostToolUse | SessionStart | UserPromptSubmit | Stop | ...
+	Matcher string
+	Command string
+	Timeout int
+	Type    string
 }
 
 // SystemPrompt is the top-level instructions file that a tool injects into

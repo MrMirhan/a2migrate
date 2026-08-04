@@ -72,7 +72,7 @@ func TestSessions_AppendNewMessages_MigratedFromCC(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	var n int
 	if err := db.QueryRowContext(context.Background(),
 		`SELECT COUNT(*) FROM message WHERE session_id IN (SELECT id FROM session WHERE metadata LIKE '%abc-1%')`,
@@ -132,8 +132,8 @@ func TestFindCCPathForOrigin(t *testing.T) {
 	}
 }
 
-func mkdirAll(p string) error       { return doMkdirAll(p) }
-func writeFile(p, body string) error { return doWriteFile(p, body) }
-func appendToFile(p, body string) error { return doAppend(p, body) }
+func mkdirAll(p string) error             { return doMkdirAll(p) }
+func writeFile(p, body string) error      { return doWriteFile(p, body) }
+func appendToFile(p, body string) error   { return doAppend(p, body) }
 func chtimes(p string, t time.Time) error { return doChtimes(p, t) }
 func readDir(p string) ([]osEntry, error) { return doReadDir(p) }

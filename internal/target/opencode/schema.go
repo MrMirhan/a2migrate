@@ -97,7 +97,7 @@ func MissingTables(ctx context.Context, db *sql.DB) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query sqlite_master: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	present := map[string]bool{}
 	for rows.Next() {
@@ -173,7 +173,7 @@ func ExistingProjectIDs(ctx context.Context, db *sql.DB) (map[string]struct{}, e
 	if err != nil {
 		return nil, fmt.Errorf("query project ids: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := map[string]struct{}{}
 	for rows.Next() {
 		var id string
@@ -194,7 +194,7 @@ func ExistingOriginIDs(ctx context.Context, db *sql.DB) (map[string]struct{}, er
 	if err != nil {
 		return nil, fmt.Errorf("query origin ids: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := map[string]struct{}{}
 	for rows.Next() {
 		var id string

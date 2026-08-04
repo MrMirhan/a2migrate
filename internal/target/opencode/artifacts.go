@@ -15,15 +15,15 @@ import (
 
 // SkillWriter writes skill markdown files into OpenCode's skill locations.
 // OpenCode scans these directories, in priority order:
-//   1. <cwd>/.opencode/skills/
-//   2. <cwd>/.claude/skills/ (shared with Claude Code)
-//   3. ~/.config/opencode/skills/
-//   4. ~/.claude/skills/       (shared with Claude Code)
+//  1. <cwd>/.opencode/skills/
+//  2. <cwd>/.claude/skills/ (shared with Claude Code)
+//  3. ~/.config/opencode/skills/
+//  4. ~/.claude/skills/       (shared with Claude Code)
 //
 // a2migrate writes to (3) for global skills and (1) for project skills,
 // leaving the (2)/(4) shared directories untouched.
 type SkillWriter struct {
-	Home string
+	Home    string
 	WorkDir string
 }
 

@@ -39,7 +39,7 @@ func TestMissingTables_EmptyDB(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	missing, err := MissingTables(context.Background(), db)
 	if err != nil {
 		t.Fatal(err)

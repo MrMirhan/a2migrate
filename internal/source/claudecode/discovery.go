@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 
@@ -49,12 +48,12 @@ func NewSessionReader(ccHome string) *SessionReader {
 
 // Project describes one discovered workspace under ~/.claude/projects/.
 type Project struct {
-	ID         string // sha1(worktree)[:40] or "global"
-	Encoded    string // encoded cwd (directory basename)
-	Worktree   string // decoded absolute path
-	IsNew      bool   // true if not yet present in OC db
-	MainCount  int    // number of main session files
-	SubCount   int    // number of subagent files
+	ID        string // sha1(worktree)[:40] or "global"
+	Encoded   string // encoded cwd (directory basename)
+	Worktree  string // decoded absolute path
+	IsNew     bool   // true if not yet present in OC db
+	MainCount int    // number of main session files
+	SubCount  int    // number of subagent files
 }
 
 // DiscoverProjects scans the projects directory and returns one Project per
@@ -225,12 +224,4 @@ func projectIDForWorktree(worktree string) string {
 // both sides agree on the same id.
 func ProjectIDForWorktree(worktree string) string {
 	return projectIDForWorktree(worktree)
-}
-
-// sessionIDPattern guards against accepting directories/files that don't
-// look like UUIDs.
-var sessionIDPattern = regexp.MustCompile(`^[0-9a-fA-F-]{8,}$`)
-
-func isValidSessionID(s string) bool {
-	return sessionIDPattern.MatchString(s)
 }

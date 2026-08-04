@@ -14,15 +14,15 @@ import (
 )
 
 type sessionsMigrateFlags struct {
-	dryRun    bool
-	yes       bool
-	backup    bool
-	from      string
-	to        string
-	renames   []string
-	includes  []string
-	excludes  []string
-	search    string
+	dryRun     bool
+	yes        bool
+	backup     bool
+	from       string
+	to         string
+	renames    []string
+	includes   []string
+	excludes   []string
+	search     string
 	skipRepair bool
 }
 
@@ -97,7 +97,7 @@ func newSessionsListCmd() *cobra.Command {
 				if r.IsSubagent {
 					tag = " [subagent]"
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "%s%s\t%s\n", r.OriginID, tag, r.Worktree)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s%s\t%s\n", r.OriginID, tag, r.Worktree)
 			}
 			return nil
 		},
@@ -130,7 +130,7 @@ func newSessionsShowCmd() *cobra.Command {
 				for _, m := range sess.Messages {
 					n += len(m.Parts)
 				}
-				fmt.Fprintf(cmd.OutOrStdout(),
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(),
 					"id:        %s\ntitle:     %s\nproject:   %s\nsubagent:  %v\nmessages:  %d\nparts:     %d\n",
 					sess.OriginID, sess.Title, sess.ProjectDir, sess.IsSubagent,
 					len(sess.Messages), n)
@@ -169,11 +169,11 @@ func newSessionsSelectCmd() *cobra.Command {
 				return err
 			}
 			if picked == nil {
-				fmt.Fprintln(cmd.OutOrStdout(), "non-interactive: use --include/--search instead")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "non-interactive: use --include/--search instead")
 				return nil
 			}
 			for _, it := range picked {
-				fmt.Fprintf(cmd.OutOrStdout(), "selected: %s\n", it.ID)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "selected: %s\n", it.ID)
 			}
 			return nil
 		},
@@ -225,7 +225,7 @@ func newSessionsVerifyCmd() *cobra.Command {
 				return err
 			}
 			if len(report.Migrated) == 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), "no migrated sessions found")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "no migrated sessions found")
 				return nil
 			}
 			for _, r := range report.Migrated {
@@ -233,7 +233,7 @@ func newSessionsVerifyCmd() *cobra.Command {
 				if r.IsSubagent {
 					tag = " [subagent]"
 				}
-				fmt.Fprintf(cmd.OutOrStdout(),
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(),
 					"%s\torigin=%s parent=%s%s title=%q\n",
 					r.OCSessionID, r.OriginID, r.ParentOrigin, tag, r.Title)
 			}
@@ -254,12 +254,12 @@ func newSessionsRepairCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			defer db.Close()
+			defer func() { _ = db.Close() }()
 			report, err := migrateRepair(cmd.Context(), db)
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(),
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
 				"scanned=%d reparent=%d pad=%d step-start-time=%d tool-state-time=%d\n",
 				report.SessionsScanned, report.Reparents, report.PadsStepParts,
 				report.AddedStepStartTimes, report.AddedToolStateTimes)
@@ -272,24 +272,24 @@ func newSessionsRepairCmd() *cobra.Command {
 
 func printSessionReport(cmd *cobra.Command, r *migrate.SessionReport) {
 	out := cmd.OutOrStdout()
-	fmt.Fprintf(out, "discovered=%d selected=%d projects=%d successes=%d failures=%d\n",
+	_, _ = fmt.Fprintf(out, "discovered=%d selected=%d projects=%d successes=%d failures=%d\n",
 		r.Discovered, r.Selected, r.Projects, r.Successes, r.Failures)
 	if r.BackupPath != "" {
-		fmt.Fprintf(out, "backup=%s\n", r.BackupPath)
+		_, _ = fmt.Fprintf(out, "backup=%s\n", r.BackupPath)
 	}
 	for _, s := range r.Results {
 		switch {
 		case s.Error != nil:
-			fmt.Fprintf(out, "FAIL %s: %v\n", s.OriginID, s.Error)
+			_, _ = fmt.Fprintf(out, "FAIL %s: %v\n", s.OriginID, s.Error)
 		case s.AlreadyMigrated:
-			fmt.Fprintf(out, "SKIP %s\talready migrated as %s\n", s.OriginID, s.OCSessionID)
+			_, _ = fmt.Fprintf(out, "SKIP %s\talready migrated as %s\n", s.OriginID, s.OCSessionID)
 		default:
-			fmt.Fprintf(out, "OK   %s\t%s (%d messages, %d parts)\n",
+			_, _ = fmt.Fprintf(out, "OK   %s\t%s (%d messages, %d parts)\n",
 				s.OCSessionID, s.Title, s.MessageCount, s.PartCount)
 		}
 	}
 	if r.Reparents+r.PadsStep+r.StepStarts+r.ToolTimes > 0 {
-		fmt.Fprintf(out, "repair: reparent=%d pad=%d step-start=%d tool-time=%d\n",
+		_, _ = fmt.Fprintf(out, "repair: reparent=%d pad=%d step-start=%d tool-time=%d\n",
 			r.Reparents, r.PadsStep, r.StepStarts, r.ToolTimes)
 	}
 }

@@ -37,7 +37,7 @@ func newSkillsCmd() *cobra.Command {
 		Short: "Migrate Claude Code skills to OpenCode",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if !yes && !dryRun {
-				fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
 			}
 			return runArtifacts(cmd.Context(), migrate.ArtifactsMigrator{CWD: cwd, DryRun: dryRun}, cmd)
 		},
@@ -115,19 +115,19 @@ func newMCPCmd() *cobra.Command {
 		Short: "Transform and merge MCP server config (mcpServers -> mcp)",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if !yes && !dryRun {
-				fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
 			}
 			servers, err := claudecode.ReadGlobalMCP()
 			if err != nil {
 				return err
 			}
 			if len(servers) == 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), "no MCP servers found")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "no MCP servers found")
 				return nil
 			}
 			if dryRun {
 				for _, s := range servers {
-					fmt.Fprintf(cmd.OutOrStdout(), "would merge %s (%s)\n", s.Name, s.Type)
+					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "would merge %s (%s)\n", s.Name, s.Type)
 				}
 				return nil
 			}
@@ -135,7 +135,7 @@ func newMCPCmd() *cobra.Command {
 			if _, err := w.Apply(opencode.MCPConfigPatch{Servers: servers}); err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "merged %d server(s)\n", len(servers))
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "merged %d server(s)\n", len(servers))
 			return nil
 		},
 	}
@@ -155,7 +155,7 @@ func newAllCmd() *cobra.Command {
 		Short: "Migrate everything (sessions, skills, commands, agents, rules, mcp, CLAUDE.md)",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if !yes && !dryRun {
-				fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
 			}
 			if err := runArtifacts(cmd.Context(), migrate.ArtifactsMigrator{CWD: cwd, DryRun: dryRun}, cmd); err != nil {
 				return err
@@ -195,7 +195,7 @@ func newReverseCmd() *cobra.Command {
 		Long:  "Reads opencode.db and writes JSONL sessions back into ~/.claude/projects/. Also copies OC artifacts (skills, commands, agents, rules, MCP, AGENTS.md) back to their CC locations.",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if !yes && !dryRun {
-				fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
 			}
 			if !dryRun {
 				if err := runReverseArtifactsForDomain(cmd.Context(), "oc-skills", yes, cwd, cmd); err != nil {
@@ -297,18 +297,18 @@ func newSystemCmd() *cobra.Command {
 // Triggered by both `system` and the `all` meta-command.
 func runSystemPrompt(dryRun, yes bool, cmd *cobra.Command) error {
 	if !yes && !dryRun {
-		fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
 	}
 	prompt, err := claudecode.ReadGlobalSystemPrompt()
 	if err != nil {
 		return err
 	}
 	if prompt == nil {
-		fmt.Fprintln(cmd.OutOrStdout(), "no CLAUDE.md found")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "no CLAUDE.md found")
 		return nil
 	}
 	if dryRun {
-		fmt.Fprintf(cmd.OutOrStdout(), "would write %s -> %s\n", prompt.SourcePath, "~/.config/opencode/AGENTS.md")
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "would write %s -> %s\n", prompt.SourcePath, "~/.config/opencode/AGENTS.md")
 		return nil
 	}
 	w := opencode.NewSystemPromptWriter()
@@ -316,7 +316,7 @@ func runSystemPrompt(dryRun, yes bool, cmd *cobra.Command) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(cmd.OutOrStdout(), "wrote %s\n", out)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "wrote %s\n", out)
 	return nil
 }
 
@@ -327,7 +327,7 @@ func runSystemPrompt(dryRun, yes bool, cmd *cobra.Command) error {
 // command.
 func runReverseArtifactsForDomain(ctx context.Context, domain string, yes bool, cwd string, cmd *cobra.Command) error {
 	if !yes {
-		fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
 	}
 	switch domain {
 	case "oc-skills":
@@ -343,7 +343,7 @@ func runReverseArtifactsForDomain(ctx context.Context, domain string, yes bool, 
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "skills: %d\n", len(written))
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "skills: %d\n", len(written))
 	case "oc-commands":
 		cmds, err := ocsrc.ReadGlobalCommands()
 		if err != nil {
@@ -357,7 +357,7 @@ func runReverseArtifactsForDomain(ctx context.Context, domain string, yes bool, 
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "commands: %d\n", len(written))
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "commands: %d\n", len(written))
 	case "oc-agents":
 		agents, err := ocsrc.ReadGlobalAgents()
 		if err != nil {
@@ -371,7 +371,7 @@ func runReverseArtifactsForDomain(ctx context.Context, domain string, yes bool, 
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "agents: %d\n", len(written))
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "agents: %d\n", len(written))
 	case "oc-rules":
 		rules, err := ocsrc.ReadGlobalRules()
 		if err != nil {
@@ -385,7 +385,7 @@ func runReverseArtifactsForDomain(ctx context.Context, domain string, yes bool, 
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "rules: %d\n", len(written))
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "rules: %d\n", len(written))
 	default:
 		return fmt.Errorf("unknown domain: %s", domain)
 	}
@@ -398,27 +398,27 @@ func runArtifacts(_ context.Context, m migrate.ArtifactsMigrator, cmd *cobra.Com
 		return err
 	}
 	if rep.DryRun {
-		fmt.Fprintln(cmd.OutOrStdout(), "dry-run: nothing written")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "dry-run: nothing written")
 		return nil
 	}
-	fmt.Fprintf(cmd.OutOrStdout(),
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(),
 		"skills=%d commands=%d agents=%d rules=%d mcp=%d\n",
 		len(rep.SkillsWritten), len(rep.CommandsWritten),
 		len(rep.AgentsWritten), len(rep.RulesWritten), len(rep.MCPMerged))
 	for _, p := range rep.SkillsWritten {
-		fmt.Fprintf(cmd.OutOrStdout(), "skill: %s\n", p)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "skill: %s\n", p)
 	}
 	for _, p := range rep.CommandsWritten {
-		fmt.Fprintf(cmd.OutOrStdout(), "command: %s\n", p)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "command: %s\n", p)
 	}
 	for _, p := range rep.AgentsWritten {
-		fmt.Fprintf(cmd.OutOrStdout(), "agent: %s\n", p)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "agent: %s\n", p)
 	}
 	for _, p := range rep.RulesWritten {
-		fmt.Fprintf(cmd.OutOrStdout(), "rule: %s\n", p)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "rule: %s\n", p)
 	}
 	for _, n := range rep.MCPMerged {
-		fmt.Fprintf(cmd.OutOrStdout(), "mcp: %s\n", n)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "mcp: %s\n", n)
 	}
 	return nil
 }

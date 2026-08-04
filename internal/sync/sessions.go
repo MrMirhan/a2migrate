@@ -6,13 +6,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/mirhan/a2migrate/internal/domain"
-	"github.com/mirhan/a2migrate/internal/platform"
 	"github.com/mirhan/a2migrate/internal/source/claudecode"
 	ocsrc "github.com/mirhan/a2migrate/internal/source/opencode"
 	"github.com/mirhan/a2migrate/internal/target/opencode"
@@ -38,7 +36,7 @@ func SessionsAt(ctx context.Context, ccHome, dbPath string, dryRun bool) (*Repor
 	if err != nil {
 		return r, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	refs, err := ocsrc.NewSessionReader(dbPath).DiscoverSessions(ctx, db)
 	if err != nil {
@@ -88,7 +86,7 @@ func syncOneSession(ctx context.Context, ccHome string, cc *claudecode.SessionRe
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var p sql.NullString
 		if err := rows.Scan(&p); err != nil {
@@ -177,14 +175,11 @@ func syncOneSession(ctx context.Context, ccHome string, cc *claudecode.SessionRe
 	return nil
 }
 
-// findCCPathForOrigin resolves the JSONL file path for a given CC origin
-// id, distinguishing main sessions from subagents.
-func findCCPathForOrigin(originID string, isSubagent bool, parentOrigin string) (string, error) {
-	return findCCPathForOriginAt(platform.ClaudeCodeHome(), originID, isSubagent, parentOrigin)
-}
-
-// findCCPathForOriginAt is the same as findCCPathForOrigin but with an
-// explicit CC home (used by tests and by callers that need to override
+// findCCPathForOriginAt resolves the JSONL file path for a given CC
+// origin id, distinguishing main sessions from subagents. Use this
+// directly (not the deprecated `findCCPathForOrigin` wrapper) when
+// you have an explicit CC home override; the platform-default variant
+// lives in the wrapper below for backwards compatibility.
 // the platform default).
 func findCCPathForOriginAt(ccHome, originID string, isSubagent bool, parentOrigin string) (string, error) {
 	projectsRoot := filepath.Join(ccHome, "projects")
@@ -237,8 +232,8 @@ func buildInsertData(m *domain.Message, parentID string) (string, error) {
 	switch m.Role {
 	case domain.RoleUser:
 		raw = map[string]any{
-			"role": "user",
-			"time": map[string]any{"created": msOrZero(m.CreatedAt)},
+			"role":  "user",
+			"time":  map[string]any{"created": msOrZero(m.CreatedAt)},
 			"agent": "build",
 			"model": map[string]any{
 				"providerID": m.ProviderID,
@@ -322,7 +317,7 @@ func SessionsReverse(ctx context.Context, dbPath, ccHome string, dryRun bool) (*
 	if err != nil {
 		return r, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	refs, err := ocsrc.NewSessionReader(dbPath).DiscoverSessions(ctx, db)
 	if err != nil {
@@ -378,7 +373,7 @@ func reverseSyncOne(ctx context.Context, ccHome, dbPath string, cc *claudecode.S
 				existing[uuid] = true
 			}
 		}
-		f.Close()
+		_ = f.Close()
 	}
 
 	sess, err := ocsrc.NewSessionReader(dbPath).ParseSession(ctx, db, ref)
@@ -439,9 +434,9 @@ func appendJSONLToCC(path string, msgs []domain.Message) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	w := bufio.NewWriter(f)
-	defer w.Flush()
+	defer func() { _ = w.Flush() }()
 	for _, m := range msgs {
 		row := ccJSONLRow(m)
 		if _, err := w.Write(append(row, '\n')); err != nil {
@@ -503,6 +498,3 @@ func ocPartsToCC(parts []domain.Part) any {
 	}
 	return blocks
 }
-
-// io is unused directly but kept for clarity.
-var _ = io.Discard

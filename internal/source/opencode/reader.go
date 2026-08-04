@@ -63,7 +63,7 @@ func (r *SessionReader) DiscoverProjects(ctx context.Context, db *sql.DB) ([]dom
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []domain.Project
 	for rows.Next() {
 		var p domain.Project
@@ -93,7 +93,7 @@ func (r *SessionReader) DiscoverSessions(ctx context.Context, db *sql.DB) ([]Ses
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []SessionRef
 	projects := map[string]string{} // id → worktree
 	for rows.Next() {
@@ -106,7 +106,7 @@ func (r *SessionReader) DiscoverSessions(ctx context.Context, db *sql.DB) ([]Ses
 		if err := rows.Scan(&id, &origin, &title, &projectID, &updated, &metadata, &parentOCID); err != nil {
 			return nil, err
 		}
-		wt, _ := projects[projectID]
+		wt := projects[projectID]
 		if wt == "" {
 			wt = lookupWorktree(ctx, db, projectID)
 			projects[projectID] = wt
@@ -180,7 +180,7 @@ func (r *SessionReader) ParseSession(ctx context.Context, db *sql.DB, ref Sessio
 	if err != nil {
 		return sess, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	for rows.Next() {
 		var (
@@ -224,7 +224,7 @@ func loadParts(ctx context.Context, db *sql.DB, messageID string) ([]partRow, er
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []partRow
 	for rows.Next() {
 		var (

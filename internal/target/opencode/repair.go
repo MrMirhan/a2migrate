@@ -10,12 +10,12 @@ import (
 
 // RepairReport summarises what Repair did.
 type RepairReport struct {
-	SessionsScanned      int
-	Reparents            int
-	PadsStepParts        int
-	AddedStepStartTimes  int
-	AddedToolStateTimes  int
-	Errors               []error
+	SessionsScanned     int
+	Reparents           int
+	PadsStepParts       int
+	AddedStepStartTimes int
+	AddedToolStateTimes int
+	Errors              []error
 }
 
 // Repair runs all four post-fix invariants against every session whose
@@ -74,7 +74,7 @@ func migratedSessions(ctx context.Context, db *sql.DB, scope []string) ([]string
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []string
 	for rows.Next() {
 		var id string
@@ -175,21 +175,21 @@ func padStepParts(ctx context.Context, db *sql.DB, sessionID string, logger *slo
 		return 0, err
 	}
 	type prow struct {
-		ID      string
-		MsgID   string
-		Ts      int64
-		Data    string
+		ID    string
+		MsgID string
+		Ts    int64
+		Data  string
 	}
 	var parts []prow
 	for rows.Next() {
 		var p prow
 		if err := rows.Scan(&p.ID, &p.MsgID, &p.Ts, &p.Data); err != nil {
-			rows.Close()
+			_ = rows.Close()
 			return 0, err
 		}
 		parts = append(parts, p)
 	}
-	rows.Close()
+	_ = rows.Close()
 
 	msgTs := map[string]int64{}
 	for _, p := range parts {
@@ -207,14 +207,14 @@ func padStepParts(ctx context.Context, db *sql.DB, sessionID string, logger *slo
 		var id string
 		var ts int64
 		if err := mrows.Scan(&id, &ts); err != nil {
-			mrows.Close()
+			_ = mrows.Close()
 			return 0, err
 		}
 		if ts != 0 {
 			msgTs[id] = ts
 		}
 	}
-	mrows.Close()
+	_ = mrows.Close()
 
 	var updated int
 	for _, p := range parts {
@@ -281,20 +281,20 @@ func addStepStartTime(ctx context.Context, db *sql.DB, sessionID string, logger 
 		return 0, err
 	}
 	type prow struct {
-		ID, MsgID      string
-		PartTS, MsgTS  int64
-		Data           string
+		ID, MsgID     string
+		PartTS, MsgTS int64
+		Data          string
 	}
 	var parts []prow
 	for rows.Next() {
 		var p prow
 		if err := rows.Scan(&p.ID, &p.MsgID, &p.PartTS, &p.MsgTS, &p.Data); err != nil {
-			rows.Close()
+			_ = rows.Close()
 			return 0, err
 		}
 		parts = append(parts, p)
 	}
-	rows.Close()
+	_ = rows.Close()
 
 	var updated int
 	for _, p := range parts {
@@ -340,12 +340,12 @@ func addToolStateTime(ctx context.Context, db *sql.DB, sessionID string, logger 
 	for rows.Next() {
 		var p prow
 		if err := rows.Scan(&p.ID, &p.Data); err != nil {
-			rows.Close()
+			_ = rows.Close()
 			return 0, err
 		}
 		parts = append(parts, p)
 	}
-	rows.Close()
+	_ = rows.Close()
 
 	var updated int
 	for _, p := range parts {
@@ -399,7 +399,7 @@ func loadMessages(ctx context.Context, db *sql.DB, sessionID string) ([]messageV
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []messageView
 	for rows.Next() {
 		var (

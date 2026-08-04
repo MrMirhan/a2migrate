@@ -28,8 +28,8 @@ func newOCSessionsCmd() *cobra.Command {
 
 func newOCSessionsListCmd() *cobra.Command {
 	var (
-		from   string
-		search string
+		from       string
+		search     string
 		skipNative bool
 	)
 	c := &cobra.Command{
@@ -55,7 +55,7 @@ func newOCSessionsListCmd() *cobra.Command {
 				if origin == "" {
 					origin = "(native)"
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "%s\torigin=%s%s\t%s\n",
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s\torigin=%s%s\t%s\n",
 					r.OCSessionID, origin, tag, r.Worktree)
 			}
 			return nil
@@ -80,7 +80,7 @@ func newOCSessionsShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			defer db.Close()
+			defer func() { _ = db.Close() }()
 			refs, err := r.DiscoverSessions(cmd.Context(), db)
 			if err != nil {
 				return err
@@ -98,7 +98,7 @@ func newOCSessionsShowCmd() *cobra.Command {
 				for _, m := range sess.Messages {
 					n += len(m.Parts)
 				}
-				fmt.Fprintf(cmd.OutOrStdout(),
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(),
 					"id:        %s\ntitle:     %s\nproject:   %s\nsubagent:  %v\nmessages:  %d\nparts:     %d\n",
 					sess.OriginID, sess.Title, sess.ProjectDir, sess.IsSubagent,
 					len(sess.Messages), n)
@@ -181,20 +181,20 @@ func newOCSessionsVerifyCmd() *cobra.Command {
 
 func printReverseReport(cmd *cobra.Command, r *migrate.ReverseReport) {
 	out := cmd.OutOrStdout()
-	fmt.Fprintf(out, "discovered=%d selected=%d successes=%d failures=%d\n",
+	_, _ = fmt.Fprintf(out, "discovered=%d selected=%d successes=%d failures=%d\n",
 		r.Discovered, r.Selected, r.Successes, r.Failures)
 	for _, s := range r.Results {
 		switch {
 		case s.Error != nil:
-			fmt.Fprintf(out, "FAIL %s: %v\n", s.OCSessionID, s.Error)
+			_, _ = fmt.Fprintf(out, "FAIL %s: %v\n", s.OCSessionID, s.Error)
 		case r.DryRun:
-			fmt.Fprintf(out, "DRY  %s\t%s\n", s.OCSessionID, s.OutputPath)
+			_, _ = fmt.Fprintf(out, "DRY  %s\t%s\n", s.OCSessionID, s.OutputPath)
 		default:
 			tag := ""
 			if s.IsSubagent {
 				tag = " [subagent]"
 			}
-			fmt.Fprintf(out, "OK   %s\torigin=%s%s\t%s\n",
+			_, _ = fmt.Fprintf(out, "OK   %s\torigin=%s%s\t%s\n",
 				s.OCSessionID, s.OriginID, tag, s.OutputPath)
 		}
 	}
@@ -202,7 +202,7 @@ func printReverseReport(cmd *cobra.Command, r *migrate.ReverseReport) {
 
 func printVerifyGroup(cmd *cobra.Command, label string, rows []migrate.ReverseVerifyRow) {
 	out := cmd.OutOrStdout()
-	fmt.Fprintf(out, "[%s] %d session(s)\n", label, len(rows))
+	_, _ = fmt.Fprintf(out, "[%s] %d session(s)\n", label, len(rows))
 	for _, r := range rows {
 		tag := ""
 		if r.IsSubagent {
@@ -212,7 +212,7 @@ func printVerifyGroup(cmd *cobra.Command, label string, rows []migrate.ReverseVe
 		if origin == "" {
 			origin = "(native)"
 		}
-		fmt.Fprintf(out, "  %s\torigin=%s%s\t%s\n",
+		_, _ = fmt.Fprintf(out, "  %s\torigin=%s%s\t%s\n",
 			r.OCSessionID, origin, tag, r.Worktree)
 	}
 }
@@ -338,10 +338,10 @@ func newOCMCPCmd() *cobra.Command {
 // the matching target/claudecode writer.
 func runReverseArtifacts(ctx context.Context, dryRun, yes bool, cwd string, cmd *cobra.Command) error {
 	if !yes && !dryRun {
-		fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
 	}
 	if dryRun {
-		fmt.Fprintln(cmd.OutOrStdout(), "dry-run: nothing written")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "dry-run: nothing written")
 		return nil
 	}
 	// Detect which command was invoked from Use.
@@ -360,9 +360,9 @@ func runReverseArtifacts(ctx context.Context, dryRun, yes bool, cwd string, cmd 
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "wrote %d skill(s)\n", len(written))
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "wrote %d skill(s)\n", len(written))
 		for _, p := range written {
-			fmt.Fprintf(cmd.OutOrStdout(), "skill: %s\n", p)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "skill: %s\n", p)
 		}
 	case "oc-commands":
 		cmds, err := ocsrc.ReadGlobalCommands()
@@ -377,9 +377,9 @@ func runReverseArtifacts(ctx context.Context, dryRun, yes bool, cwd string, cmd 
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "wrote %d command(s)\n", len(written))
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "wrote %d command(s)\n", len(written))
 		for _, p := range written {
-			fmt.Fprintf(cmd.OutOrStdout(), "command: %s\n", p)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "command: %s\n", p)
 		}
 	case "oc-agents":
 		agents, err := ocsrc.ReadGlobalAgents()
@@ -394,9 +394,9 @@ func runReverseArtifacts(ctx context.Context, dryRun, yes bool, cwd string, cmd 
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "wrote %d agent(s)\n", len(written))
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "wrote %d agent(s)\n", len(written))
 		for _, p := range written {
-			fmt.Fprintf(cmd.OutOrStdout(), "agent: %s\n", p)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "agent: %s\n", p)
 		}
 	case "oc-rules":
 		rules, err := ocsrc.ReadGlobalRules()
@@ -411,9 +411,9 @@ func runReverseArtifacts(ctx context.Context, dryRun, yes bool, cwd string, cmd 
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "wrote %d rule(s)\n", len(written))
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "wrote %d rule(s)\n", len(written))
 		for _, p := range written {
-			fmt.Fprintf(cmd.OutOrStdout(), "rule: %s\n", p)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "rule: %s\n", p)
 		}
 	default:
 		return fmt.Errorf("unknown reverse artifact command: %s", use)
@@ -423,19 +423,19 @@ func runReverseArtifacts(ctx context.Context, dryRun, yes bool, cwd string, cmd 
 
 func runReverseMCP(ctx context.Context, dryRun, yes bool, ccHome string, cmd *cobra.Command) error {
 	if !yes && !dryRun {
-		fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
 	}
 	servers, err := ocsrc.ReadGlobalMCP()
 	if err != nil {
 		return err
 	}
 	if len(servers) == 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "no MCP servers found")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "no MCP servers found")
 		return nil
 	}
 	if dryRun {
 		for _, s := range servers {
-			fmt.Fprintf(cmd.OutOrStdout(), "would merge %s\n", s.Name)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "would merge %s\n", s.Name)
 		}
 		return nil
 	}
@@ -443,7 +443,7 @@ func runReverseMCP(ctx context.Context, dryRun, yes bool, ccHome string, cmd *co
 	if _, err := w.Apply(servers); err != nil {
 		return err
 	}
-	fmt.Fprintf(cmd.OutOrStdout(), "merged %d server(s)\n", len(servers))
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "merged %d server(s)\n", len(servers))
 	return nil
 }
 
@@ -452,18 +452,18 @@ func runReverseMCP(ctx context.Context, dryRun, yes bool, ccHome string, cmd *co
 // meta-command.
 func runReverseSystemPrompt(dryRun, yes bool, ccHome string, cmd *cobra.Command) error {
 	if !yes && !dryRun {
-		fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
 	}
 	prompt, err := ocsrc.ReadGlobalSystemPrompt()
 	if err != nil {
 		return err
 	}
 	if prompt == nil {
-		fmt.Fprintln(cmd.OutOrStdout(), "no AGENTS.md found")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "no AGENTS.md found")
 		return nil
 	}
 	if dryRun {
-		fmt.Fprintf(cmd.OutOrStdout(), "would write %s -> %s\n", prompt.SourcePath, filepath.Join(ccHome, "CLAUDE.md"))
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "would write %s -> %s\n", prompt.SourcePath, filepath.Join(ccHome, "CLAUDE.md"))
 		return nil
 	}
 	w := cctgt.NewSystemPromptWriter()
@@ -474,7 +474,7 @@ func runReverseSystemPrompt(dryRun, yes bool, ccHome string, cmd *cobra.Command)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(cmd.OutOrStdout(), "wrote %s\n", out)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "wrote %s\n", out)
 	return nil
 }
 

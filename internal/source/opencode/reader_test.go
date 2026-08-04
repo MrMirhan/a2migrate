@@ -24,7 +24,7 @@ func TestReader_DiscoverSessions_Empty(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	refs, err := r.DiscoverSessions(ctx, db)
 	if err != nil {
 		t.Fatal(err)
@@ -42,7 +42,7 @@ func TestReader_Parse_NativeSession(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Seed a project + session + 3 messages + parts.
 	if _, err := db.ExecContext(ctx,
@@ -114,7 +114,7 @@ func TestReader_Parse_ToolPart(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	if _, err := db.ExecContext(ctx,
 		`INSERT INTO project(id, worktree, sandboxes) VALUES ('p1', '/x', '[]')`); err != nil {
@@ -163,7 +163,7 @@ func TestReader_Parse_Subagent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	if _, err := db.ExecContext(ctx,
 		`INSERT INTO project(id, worktree, sandboxes) VALUES ('p1', '/x', '[]')`); err != nil {

@@ -11,11 +11,11 @@ import (
 
 func TestTokensToUsage_RoundTrip(t *testing.T) {
 	in := domain.Tokens{
-		Input:      100,
-		Output:     50,
-		CacheRead:  1024,
-		CacheWrite: 200,
-		Reasoning:  10,
+		Input:       100,
+		Output:      50,
+		CacheRead:   1024,
+		CacheWrite:  200,
+		Reasoning:   10,
 		ServiceTier: "standard",
 		Speed:       "fast",
 	}

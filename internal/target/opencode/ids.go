@@ -71,7 +71,6 @@ func GenID(prefix, seed string, existing map[string]struct{}) string {
 
 // collisionSuffix returns a deterministic, monotonically-growing suffix for
 // disambiguating colliding ids. "-00" → "-99" → "-0a0" → …
-//
 func collisionSuffix(i int) string {
 	if i < 100 {
 		const digits = "0123456789"
@@ -112,20 +111,4 @@ func Hash16(s string) string {
 	h := fnv.New64a()
 	_, _ = h.Write([]byte(s))
 	return hex.EncodeToString(h.Sum(nil))
-}
-
-func twoDigit(i int) string {
-	const digits = "0123456789"
-	if i < 10 {
-		return string(digits[i]) + "0"
-	}
-	return string(digits[i/10]) + string(digits[i%10])
-}
-
-func threeDigit(i int) string {
-	if i < 100 {
-		return "0" + twoDigit(i)
-	}
-	// For >= 100, fall back to a 3-char lowercase-base32 fragment.
-	return strings.ToLower(enc.EncodeToString([]byte{byte(i)}))[:3]
 }

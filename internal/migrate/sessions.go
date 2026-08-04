@@ -22,9 +22,9 @@ import (
 
 // Options configure a session migration run.
 type Options struct {
-	From        string            // CC home override (empty = platform default)
-	To          string            // OC db path override
-	BackupDir   string            // backup location (empty = skip)
+	From        string // CC home override (empty = platform default)
+	To          string // OC db path override
+	BackupDir   string // backup location (empty = skip)
 	DryRun      bool
 	Yes         bool
 	Renames     map[string]string // originID -> new title
@@ -162,7 +162,7 @@ func (m *SessionMigrator) Run(ctx context.Context, refs []claudecode.SessionRef)
 	if err != nil {
 		return report, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	if !m.Options.DryRun && m.Options.BackupDir != "" {
 		backupPath, err := opencode.Backup(m.Options.To, m.Options.BackupDir)
@@ -199,12 +199,12 @@ func (m *SessionMigrator) Run(ctx context.Context, refs []claudecode.SessionRef)
 		report.Projects = len(plan.NewProjects)
 		for _, r := range sessions {
 			report.Results = append(report.Results, SessionResult{
-				OriginID:    r.OriginID,
-				Title:       r.Title,
-				IsSubagent:  r.IsSubagent,
-				ProjectDir:  r.ProjectDir,
+				OriginID:     r.OriginID,
+				Title:        r.Title,
+				IsSubagent:   r.IsSubagent,
+				ProjectDir:   r.ProjectDir,
 				MessageCount: len(r.Messages),
-				PartCount:   partCount(r),
+				PartCount:    partCount(r),
 			})
 		}
 		return report, nil
@@ -258,9 +258,9 @@ func (m *SessionMigrator) Run(ctx context.Context, refs []claudecode.SessionRef)
 			continue
 		}
 		sr := SessionResult{
-			OriginID:   r.OriginID,
-			IsSubagent: r.IsSubagent,
-			ProjectDir: r.Worktree,
+			OriginID:    r.OriginID,
+			IsSubagent:  r.IsSubagent,
+			ProjectDir:  r.Worktree,
 			OCSessionID: ocID,
 		}
 		for _, s := range sessions {
@@ -359,14 +359,14 @@ func Verify(ctx context.Context, dbPath string) (*VerifyReport, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	rows, err := db.QueryContext(ctx,
 		`SELECT id, metadata, title, project_id, time_updated
 		 FROM session WHERE metadata LIKE '%claude_code_origin%'`)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out VerifyReport
 	for rows.Next() {
 		var (
@@ -377,9 +377,9 @@ func Verify(ctx context.Context, dbPath string) (*VerifyReport, error) {
 			return nil, err
 		}
 		var meta struct {
-			Origin      string `json:"claude_code_origin"`
-			Parent      string `json:"claude_code_parent"`
-			IsSubagent  bool   `json:"is_subagent"`
+			Origin     string `json:"claude_code_origin"`
+			Parent     string `json:"claude_code_parent"`
+			IsSubagent bool   `json:"is_subagent"`
 		}
 		_ = json.Unmarshal([]byte(metadata), &meta)
 		out.Migrated = append(out.Migrated, VerifyRow{

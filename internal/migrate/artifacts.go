@@ -8,13 +8,13 @@ import (
 
 // ArtifactsReport summarises what an artifact migration run produced.
 type ArtifactsReport struct {
-	SkillsWritten      []string
-	CommandsWritten    []string
-	AgentsWritten      []string
-	RulesWritten       []string
-	MCPMerged          []string
+	SkillsWritten       []string
+	CommandsWritten     []string
+	AgentsWritten       []string
+	RulesWritten        []string
+	MCPMerged           []string
 	SystemPromptWritten string
-	DryRun             bool
+	DryRun              bool
 }
 
 // ArtifactsMigrator coordinates the non-session artifact migration:

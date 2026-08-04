@@ -27,16 +27,16 @@ append-only for sessions. Idempotent.`,
 
 func newSyncAllCmd() *cobra.Command {
 	var (
-		dryRun, yes        bool
-		from, to           string
-		direction          string
+		dryRun, yes bool
+		from, to    string
+		direction   string
 	)
 	c := &cobra.Command{
 		Use:   "all",
 		Short: "Sync artifacts + sessions in both directions",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if !yes && !dryRun {
-				fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
 			}
 			if err := runSyncArtifacts(direction, dryRun, cmd); err != nil {
 				return err
@@ -152,12 +152,12 @@ func printSyncReport(cmd *cobra.Command, r *syncpkg.Report) {
 		return
 	}
 	for _, a := range r.Applied {
-		fmt.Fprintf(out, "%s\t%s\n", a.Op, a.Path)
+		_, _ = fmt.Fprintf(out, "%s\t%s\n", a.Op, a.Path)
 	}
 	if r.Skipped > 0 {
-		fmt.Fprintf(out, "skipped: %d\n", r.Skipped)
+		_, _ = fmt.Fprintf(out, "skipped: %d\n", r.Skipped)
 	}
 	for _, e := range r.Errors {
-		fmt.Fprintf(out, "ERROR: %v\n", e)
+		_, _ = fmt.Fprintf(out, "ERROR: %v\n", e)
 	}
 }

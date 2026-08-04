@@ -13,10 +13,10 @@ import (
 func TestSanitizeFilename(t *testing.T) {
 	cases := map[string]string{
 		"Foo Bar": "foo-bar",
-		"über":   "ber",
-		"$$$":    "untitled",
-		"":       "untitled",
-		"a/b/c":  "a-b-c",
+		"über":    "ber",
+		"$$$":     "untitled",
+		"":        "untitled",
+		"a/b/c":   "a-b-c",
 	}
 	for in, want := range cases {
 		if got := sanitizeFilename(in); got != want {

@@ -208,13 +208,13 @@ type MCPSettings struct {
 }
 
 type mcpServerRaw struct {
-	Command  any            `json:"command"`
-	Args     []any          `json:"args"`
-	Env      map[string]any `json:"env"`
-	URL      string         `json:"url"`
-	Type     string         `json:"type"`
-	Enabled  *bool          `json:"enabled"`
-	Headers  map[string]any `json:"headers"`
+	Command any            `json:"command"`
+	Args    []any          `json:"args"`
+	Env     map[string]any `json:"env"`
+	URL     string         `json:"url"`
+	Type    string         `json:"type"`
+	Enabled *bool          `json:"enabled"`
+	Headers map[string]any `json:"headers"`
 }
 
 // ReadGlobalMCP reads ~/.claude/mcp.json and normalizes it to domain.MCPServer.

@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/mirhan/a2migrate/internal/domain"
@@ -25,9 +24,9 @@ type Plan struct {
 
 // projectRow describes one INSERT into `project`.
 type projectRow struct {
-	ID         string
-	Worktree   string
-	Name       string
+	ID          string
+	Worktree    string
+	Name        string
 	TimeCreated int64
 	TimeUpdated int64
 	Sandboxes   string
@@ -106,12 +105,12 @@ func Backup(dbPath, dstDir string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("open source %s: %w", dbPath, err)
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {
 		return "", fmt.Errorf("open dest %s: %w", dst, err)
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 	if _, err := out.ReadFrom(in); err != nil {
 		return "", err
 	}
@@ -244,7 +243,7 @@ func (w *SessionWriter) buildSessionRow(s *domain.Session, parentOC string, exis
 	id := GenID("ses", s.OriginID, existing)
 	metadata := map[string]any{
 		"claude_code_origin": s.OriginID,
-		"is_subagent":       s.IsSubagent,
+		"is_subagent":        s.IsSubagent,
 	}
 	if s.IsSubagent && s.ParentID != "" {
 		metadata["claude_code_parent"] = s.ParentID
@@ -286,17 +285,10 @@ func (w *SessionWriter) slugFor(s *domain.Session) string {
 		titleSlug = titleSlug[:30]
 	}
 	body := Hash16(s.OriginID)[:8] + "-" + titleSlug
-	candidate := body
-	for i := 0; i < 100; i++ {
-		// Apply() will detect collisions via PRIMARY KEY failures; we just
-		// produce a unique candidate here using GlobalID space.
-		fullID := GenID("ses", s.OriginID+":"+candidate, map[string]struct{}{})
-		if !strings.Contains(fullID, candidate) {
-			return candidate
-		}
-		return candidate + "-" + fmt.Sprintf("%02d", i)
-	}
-	return candidate
+	// Sanitize collision suffix outside any loop; Apply() detects PRIMARY
+	// KEY failures on the OC id (not the slug), so the slug is just for
+	// display and may be repeated across sessions without harm.
+	return body
 }
 
 // buildMessageRows emits message + part rows for one session.
@@ -373,8 +365,8 @@ func buildMessageData(m *domain.Message, parentID string) (string, error) {
 	switch m.Role {
 	case domain.RoleUser:
 		raw = map[string]any{
-			"role": "user",
-			"time": map[string]any{"created": msOrZero(m.CreatedAt)},
+			"role":  "user",
+			"time":  map[string]any{"created": msOrZero(m.CreatedAt)},
 			"agent": "build",
 			"model": map[string]any{
 				"providerID": m.ProviderID,
@@ -552,7 +544,7 @@ func deriveDBPath(db *sql.DB) string {
 	if err != nil {
 		return ""
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	if rows.Next() {
 		var seq int
 		var name, path string

@@ -21,7 +21,7 @@ func seedOCDB(t *testing.T) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	ctx := context.Background()
 
 	if _, err := db.ExecContext(ctx,

@@ -119,8 +119,8 @@ func buildJSONL(sess domain.Session, sessionID string, parentOCID string) []byte
 		case domain.RoleUser:
 			text := textFromUserParts(m.Parts)
 			writeJSON(&b, map[string]any{
-				"type":      "user",
-				"uuid":      msgID,
+				"type":       "user",
+				"uuid":       msgID,
 				"parentUuid": pickParent(prevMsgID),
 				"sessionId":  sessionID,
 				"timestamp":  ts,
@@ -150,7 +150,7 @@ func buildJSONL(sess domain.Session, sessionID string, parentOCID string) []byte
 			if m.CostUSD > 0 {
 				entry["cost_usd"] = m.CostUSD
 			}
-			if m.FinishedAt.IsZero() == false {
+			if !m.FinishedAt.IsZero() {
 				entry["completedAt"] = formatTime(m.FinishedAt)
 			}
 			if m.ModelID != "" {
@@ -237,10 +237,10 @@ func blocksFromAssistantParts(parts []domain.Part) []map[string]any {
 			})
 			if p.ToolOutput != "" || p.ToolStatus == "error" {
 				out = append(out, map[string]any{
-					"type":       "tool_result",
+					"type":        "tool_result",
 					"tool_use_id": p.ToolCallID,
-					"content":    p.ToolOutput,
-					"is_error":   p.ToolStatus == "error",
+					"content":     p.ToolOutput,
+					"is_error":    p.ToolStatus == "error",
 				})
 			}
 		}
@@ -268,7 +268,7 @@ func appendJSONL(path string, data []byte) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	_, err = f.Write(data)
 	return err
 }

@@ -63,11 +63,11 @@ type messagePayload struct {
 // assistant messages. All fields are optional; only those actually present
 // in the JSON survive.
 type usagePayload struct {
-	InputTokens              int64 `json:"input_tokens"`
-	OutputTokens             int64 `json:"output_tokens"`
-	CacheCreationInputTokens int64 `json:"cache_creation_input_tokens"`
-	CacheReadInputTokens     int64 `json:"cache_read_input_tokens"`
-	ReasoningTokens          int64 `json:"reasoning_tokens"`
+	InputTokens              int64  `json:"input_tokens"`
+	OutputTokens             int64  `json:"output_tokens"`
+	CacheCreationInputTokens int64  `json:"cache_creation_input_tokens"`
+	CacheReadInputTokens     int64  `json:"cache_read_input_tokens"`
+	ReasoningTokens          int64  `json:"reasoning_tokens"`
 	ServiceTier              string `json:"service_tier"`
 	Speed                    string `json:"speed"`
 }
@@ -75,14 +75,14 @@ type usagePayload struct {
 // TokenCounts is the migration-friendly form of CC's usage block. It maps
 // 1:1 onto OC's `tokens.{input,output,reasoning,cache.{read,write}}` shape.
 type TokenCounts struct {
-	Input          int64 `json:"input"`
-	Output         int64 `json:"output"`
-	Reasoning      int64 `json:"reasoning"`
-	CacheRead      int64 `json:"cache_read"`
-	CacheWrite     int64 `json:"cache_write"`
-	ServiceTier    string `json:"service_tier,omitempty"`
-	Speed          string `json:"speed,omitempty"`
-	Raw            json.RawMessage `json:"raw,omitempty"`
+	Input       int64           `json:"input"`
+	Output      int64           `json:"output"`
+	Reasoning   int64           `json:"reasoning"`
+	CacheRead   int64           `json:"cache_read"`
+	CacheWrite  int64           `json:"cache_write"`
+	ServiceTier string          `json:"service_tier,omitempty"`
+	Speed       string          `json:"speed,omitempty"`
+	Raw         json.RawMessage `json:"raw,omitempty"`
 }
 
 // FromUsage projects a usage block into the OC shape. Reasoning defaults to 0
@@ -136,7 +136,7 @@ func (r *SessionReader) ParseSession(path string) (domain.Session, error) {
 	if err != nil {
 		return domain.Session{}, fmt.Errorf("open %s: %w", path, err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	base := filepath.Base(path)
 	origin := base
 	if i := strings.LastIndex(base, "."); i > 0 {
@@ -162,8 +162,9 @@ func (r *SessionReader) ParseSession(path string) (domain.Session, error) {
 
 // lookupWorktreeFromPath derives the worktree from the parent project dir
 // segment of a JSONL file path. Path layout:
-//   ~/.claude/projects/<encoded>/<file>.jsonl
-//   ~/.claude/projects/<encoded>/<sid>/subagents/agent-<id>.jsonl
+//
+//	~/.claude/projects/<encoded>/<file>.jsonl
+//	~/.claude/projects/<encoded>/<sid>/subagents/agent-<id>.jsonl
 func lookupWorktreeFromPath(path string) string {
 	slash := filepath.ToSlash(path)
 	parts := strings.Split(slash, "/projects/")
@@ -573,7 +574,7 @@ func (r *SessionReader) Summarize(path string, maxRecords, maxBytes int) (Summar
 	if err != nil {
 		return Summary{}, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	ref, _ := os.Stat(path)
 	out := Summary{
