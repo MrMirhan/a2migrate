@@ -1,0 +1,21 @@
+# Binaries
+/a2migrate
+/dist/
+
+# Test artifacts
+*.test
+*.out
+coverage.txt
+
+# Editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Local fixtures (kept under testdata/ but exclude any root-level)
+fixtures/
+
+# Go workspace
+go.work
+go.work.sum
