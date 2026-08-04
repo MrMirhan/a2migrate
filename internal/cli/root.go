@@ -71,8 +71,9 @@ func NewRootCmd(logger *slog.Logger) *cobra.Command {
 	root.AddCommand(newOCMCPCmd())
 	root.AddCommand(newOCSystemCmd())
 	root.AddCommand(newReverseCmd())
-	root.AddCommand(newSyncCmd())
-	root.AddCommand(newVersionCmd())
+root.AddCommand(newSyncCmd())
+root.AddCommand(newToolsCmd())
+root.AddCommand(newVersionCmd())
 
 	return root
 }
