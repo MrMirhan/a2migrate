@@ -7,8 +7,9 @@ commands, agents, rules, MCP servers, and top-level instructions between
 OpenCode and Claude Code in both directions. It preserves chat content,
 tool calls, subagent chains, and per-message token usage.
 
-`all` migrates CC → OC; `reverse` migrates OC → CC; `sync` keeps both
-sides in lock-step over time. All three are idempotent.
+Tools are arguments, not commands: `a2migrate migrate <from> <to>` moves
+state one way, swapping the two moves it back, and `sync` keeps both
+sides in lock-step over time. Everything is idempotent.
 
 ## Install
 
@@ -55,21 +56,25 @@ a2migrate version
 
 ```sh
 # See what would migrate, with zero side effects.
-a2migrate sessions list
-a2migrate sessions migrate --dry-run --search "refactor auth"
+a2migrate list claude-code sessions
+a2migrate migrate claude-code opencode sessions --dry-run --search "refactor auth"
 
-# Migrate one session (with timestamped DB backup before apply).
-a2migrate sessions migrate --search "bug fix" --backup --yes
+# Migrate one session (with a timestamped backup before apply).
+a2migrate migrate claude-code opencode sessions --search "bug fix" --backup --yes
 
-# Migrate everything in one shot.
-a2migrate all --backup --yes
+# Migrate everything both tools support, in one shot.
+a2migrate migrate claude-code opencode --backup --yes
 
 # Push OC sessions back into CC (e.g. you bounced between tools).
-a2migrate reverse --to /tmp/cc-home --yes
+a2migrate migrate opencode claude-code sessions --yes
 
 # Keep both sides in sync after every session ends.
 a2migrate sync
 ```
+
+`cc` and `oc` are accepted as shortcuts, so `a2migrate migrate cc oc` is
+the same thing. Naming no domains migrates every domain both tools
+support; naming some (`skills agents`) limits the run to those.
 
 ## Features
 
@@ -105,8 +110,10 @@ a2migrate sync
 
 - **Idempotent.** Every code path is safe to re-run. Already-migrated
   sessions are detected via `claude_code_origin` metadata and skipped.
-- **Transactional.** Session writes run in a single SQL transaction
-  with a `--backup` flag.
+- **Transactional.** Session writes into OpenCode run in a single SQL
+  transaction. `--backup` snapshots the target first in either
+  direction: the SQLite file for OpenCode, and every JSONL file about to
+  be overwritten (subagent transcripts included) for Claude Code.
 - **Self-healing.** Post-fix invariants restore the four renderer
   requirements: assistant→user reparents, step-start/step-finish get
   padded with native fields, bare step-start gets a `time` block, every
@@ -119,34 +126,15 @@ a2migrate sync
 
 ```
 a2migrate
-├── sessions                 CC source → OC target
-│   ├── list
-│   ├── show <id>
-│   ├── select               interactive picker
-│   ├── migrate [--backup] [--dry-run] [--search] [--include] [--exclude]
-│   │             [--rename old=new] [--skip-repair] [--yes]
-│   ├── verify
-│   └── repair
-├── skills                   ~/.claude/skills/ → ~/.config/opencode/skills/
-├── commands                 .claude/commands/ → .opencode/command/
-├── agents                   .claude/agents/ → .opencode/agent/
-├── rules                    .claude/rules/ → .opencode/rules/
-├── mcp                      mcpServers{} → mcp{}
-├── system                   ~/.claude/CLAUDE.md → ~/.config/opencode/AGENTS.md
-├── all                      every CC→OC domain above
-│
-├── oc-sessions              OC source → CC target
-│   ├── list
-│   ├── show <oc-id>
-│   ├── migrate
-│   └── verify
-├── oc-skills                .opencode/skills/ → .claude/skills/
-├── oc-commands              .opencode/command/ → .claude/commands/
-├── oc-agents                .opencode/agent/ → .claude/agents/
-├── oc-rules                 .opencode/rules/ → .claude/rules/
-├── oc-mcp                   mcp{} → mcpServers{}
-├── oc-system                AGENTS.md → CLAUDE.md
-├── reverse                  every OC→CC domain above
+├── migrate <from> <to> [domain...]
+│     [--backup] [--dry-run] [--search] [--include] [--exclude]
+│     [--rename old=new] [--skip-repair] [--skip-native] [--yes]
+│     [--cwd] [--source-path] [--target-path]
+├── list    <tool> [domain]     what that tool has on disk
+├── show    <tool> <id>         one session's details
+├── select  <tool>              interactive picker
+├── verify  <tool>              what has been migrated in, and from where
+├── repair  <tool>              re-run post-migration invariants
 │
 ├── sync                     bidirectional CC↔OC reconciler
 │   ├── all                  artifacts + sessions in both directions
@@ -160,6 +148,27 @@ a2migrate
 │
 └── version
 ```
+
+`<tool>` is any id from `a2migrate tools list` (`claude-code`,
+`opencode`, plus `cc` / `oc` shortcuts). `<domain>` is one of
+`sessions`, `skills`, `commands`, `agents`, `rules`, `mcp`, `system`.
+
+The command list does not grow when a tool is added — a new tool is one
+registry entry, and every verb above starts accepting it. Shell
+completion is driven by the same registry: the second argument to
+`migrate` excludes whatever you named first, and the domain arguments
+offer only what both tools declare support for, so an unsupported
+combination cannot be completed into existence.
+
+| Domain | Claude Code | OpenCode |
+|---|---|---|
+| `skills` | `~/.claude/skills/` | `~/.config/opencode/skills/` |
+| `commands` | `.claude/commands/` | `.opencode/command/` |
+| `agents` | `.claude/agents/` | `.opencode/agent/` |
+| `rules` | `.claude/rules/` | `.opencode/rules/` |
+| `mcp` | `mcpServers{}` | `mcp{}` |
+| `system` | `CLAUDE.md` | `AGENTS.md` |
+| `sessions` | `projects/*/*.jsonl` | `opencode.db` |
 
 ## What gets preserved
 
@@ -192,16 +201,21 @@ a2migrate
 XDG Base Directory spec is followed on Linux. macOS uses
 `~/Library/...`. Windows uses `%AppData%` / `%LocalAppData%`.
 
-## When to use `all` vs `reverse` vs `sync`
+## When to use `migrate` vs `sync`
 
-- **Just switched tools and want everything in one place.** Run `all`
-  (CC → OC) or `reverse` (OC → CC). Idempotent.
+- **Just switched tools and want everything in one place.** Run
+  `migrate cc oc` (or `migrate oc cc`) with no domain arguments.
+  Idempotent.
 - **Live on both tools and don't want drift.** Run `sync` after each
   session, or wire it into a cron / hook. `sync` updates whichever side
   has newer content; equal mtimes cost nothing.
-- **Daily driver, mostly CC.** Run `all` once, then `sync sessions`
-  to pick up new CC sessions when you open OC.
-- **Daily driver, mostly OC.** Same, but `reverse` then `sync reverse`.
+- **Daily driver, mostly CC.** Run `migrate cc oc` once, then
+  `sync sessions` to pick up new CC sessions when you open OC.
+- **Daily driver, mostly OC.** Same, but `migrate oc cc` then
+  `sync reverse`.
+
+`migrate` copies; `sync` reconciles. Reach for `migrate` when one side
+is authoritative and you want the other to match it right now.
 
 ## When not to use this
 

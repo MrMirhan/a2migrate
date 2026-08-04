@@ -24,7 +24,7 @@ migrate/                   orchestration: discovery → plan → apply
 | Package | Purpose |
 |---|---|
 | `cmd/a2migrate` | Entrypoint, parses flags, exits. |
-| `internal/cli` | Cobra command tree. Each command is a thin shim that wires flags into `migrate.Options` and prints the report. |
+| `internal/cli` | Cobra command tree, one command per verb. Tools and domains arrive as arguments resolved against `internal/tools`, so the tree does not grow when a tool is added. Each command is a thin shim that wires arguments and flags into `migrate.Options` and prints the report. |
 | `internal/migrate` | Orchestration. `SessionMigrator`, `ArtifactsMigrator`, `Verify`. |
 | `internal/source/claudecode` | Reader for CC state — JSONL parser, project discovery, frontmatter parser, MCP/hooks readers. |
 | `internal/target/opencode` | Writer for OC state — SQLite session/message/part writer, repair pipeline, filesystem writers for skills/commands/agents/rules/MCP. |
@@ -105,9 +105,15 @@ renderer requires at the time.
    - `Plan<Type>(...)` returning rows.
    - `Apply(plan)` running in a single transaction.
    - Repair invariants if the renderer needs padded fields.
-2. Add `<system>Options` to `internal/migrate`.
-3. Add a `<system>` cobra command under `internal/cli`.
-4. Wire it into `internal/cli/all.go`.
+2. Register the tool in `internal/tools/registry.go`, declaring the
+   `Capabilities` it actually supports.
+3. Add the `(from, to)` pair to the dispatch switch in
+   `internal/cli/migrate_cmd.go`.
+
+No new cobra command is needed. Tools are arguments, so the registry
+entry is what makes `migrate <tool> ...`, `list <tool>`, and the rest
+start accepting it — including shell completion, which reads the same
+`Capabilities` to decide which domains a pair can exchange.
 
 The source-side stays the same; only the target-side is new.
 
@@ -117,7 +123,7 @@ Mirror the structure:
 
 1. `internal/source/<system>/` with readers for sessions + artifacts.
 2. `internal/migrate/<system>.go` orchestrator.
-3. Cobra command.
+3. Registry entry + dispatch pair, as above.
 
 ## Adding a new artifact type
 
@@ -127,4 +133,7 @@ shape: source reader + target writer + a few flags. To add one:
 1. Add a `domain.X` type.
 2. Implement `Read<Global|Project>X()` in `source/claudecode`.
 3. Add `XWriter` in `target/opencode` with `WriteGlobal` + `WriteProject`.
-4. Wire into `ArtifactsMigrator` + cobra command.
+4. Add a `tools.Capability` for it and declare it on every tool that
+   has it.
+5. Add one row to `domainMigrators` in `internal/migrate/artifacts.go`
+   and one to `cliDomains` in `internal/cli/toolarg.go`.
