@@ -33,3 +33,56 @@ envelopes, update both:
 The renderer (OpenCode itself) is the source of truth for what
 constitutes a valid migrated session. When in doubt, look at a
 native-row dump.
+
+## Release process
+
+Releases are cut by pushing a signed tag. CI does the rest.
+
+### Local dry-run (no publish)
+
+```sh
+make release-check   # validate .goreleaser.yaml only
+make snapshot        # build all 5 platform binaries to ./dist/
+```
+
+Both are safe and don't touch the GitHub release.
+
+### Cutting a release
+
+```sh
+# One-time: configure a signing key.
+git config --global user.signingkey <key-id>
+
+# Tag and push.
+make release TAG=v0.1.0
+# git tag -s v0.1.0 -m "Release v0.1.0"
+# git push origin v0.1.0
+```
+
+The `.github/workflows/release.yml` workflow then:
+
+1. Runs `goreleaser release --clean --skip=sign` on the tagged commit
+   (GoReleaser `v2.7.2`, pinned in the workflow for reproducibility).
+2. Builds five targets: `linux/amd64`, `linux/arm64`,
+   `darwin/amd64`, `darwin/arm64`, `windows/amd64`.
+3. Generates `.tar.gz` / `.zip` archives plus a `.SHA256SUMS` file.
+4. Drafts a GitHub Release from the conventional commits in the diff
+   (`feat:`, `fix:`, `perf:`, `refactor:`, `docs:`, etc.).
+5. Attaches the binaries.
+
+Binaries appear at the GitHub Releases page within ~2 minutes of the
+tag push.
+
+### Commit conventions
+
+Use [Conventional Commits](https://www.conventionalcommits.org/):
+
+- `feat: <description>` — new user-facing capability
+- `fix: <description>` — bug fix
+- `docs: <description>` — docs only
+- `test: <description>` — tests only
+- `refactor: <description>` — internal restructuring
+- `ci: <description>` — CI workflow changes
+
+GoReleaser parses these for changelog grouping. Commits that don't
+match still land in the release under "Other".

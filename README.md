@@ -265,46 +265,10 @@ internal/version/      build-time info
 
 MIT. See [LICENSE](./LICENSE).
 
-## Release process
+## Contributing and releases
 
-Releases are cut by pushing a signed tag. CI does the rest.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for:
 
-```sh
-# One-time per repo: ensure tag signing key is configured.
-git config --global user.signingkey <key-id>
-
-# Cut a release.
-make release TAG=v0.1.0
-# git tag -s v0.1.0 -m "Release v0.1.0"
-# git push origin v0.1.0
-```
-
-The `.github/workflows/release.yml` workflow then:
-
-1. Runs `goreleaser release --clean --skip=sign` on the tagged commit.
-2. Builds five targets (`linux/amd64`, `linux/arm64`,
-   `darwin/amd64`, `darwin/arm64`, `windows/amd64`).
-3. Generates `.tar.gz` / `.zip` archives plus a `.SHA256SUMS` file.
-4. Drafts a GitHub Release from the conventional commits in the diff.
-5. Attaches the binaries.
-
-Binaries appear at
-[github.com/MrMirhan/a2migrate/releases](https://github.com/MrMirhan/a2migrate/releases)
-within ~2 minutes of the tag push.
-
-To do a local dry-run of the release pipeline without publishing:
-
-```sh
-make snapshot       # builds to ./dist/
-make release-check  # validates .goreleaser.yaml
-```
-
-## Acknowledgements
-
-- The original Python migration script this Go implementation is built on
-  lives in [`senrecep/claude-code-to-opencode`](https://gist.github.com/senrecep/98d3583717581a4138bac62344261f6f)
-  and was reverse-engineered line by line into the four post-fix
-  invariants and the per-message SQL envelope.
-- The OpenCode [project docs](https://opencode.ai/) for the
-  SQLite schema, message JSON envelope, and the canonical file locations
-  for every artifact domain.
+- Development setup (build, test, lint)
+- Pull request conventions
+- **Release process** — how a tag becomes a multi-arch GitHub Release
