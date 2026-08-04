@@ -4,8 +4,7 @@
 OpenCode — and back.**
 
 [![CI](https://github.com/MrMirhan/a2migrate/actions/workflows/ci.yml/badge.svg)](https://github.com/MrMirhan/a2migrate/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/mirhan/a2migrate)](https://goreportcard.com/report/github.com/mirhan/a2migrate)
-[![Go Reference](https://pkg.go.dev/badge/github.com/mirhan/a2migrate.svg)](https://pkg.go.dev/github.com/mirhan/a2migrate)
+[![Go Reference](https://pkg.go.dev/badge/github.com/MrMirhan/a2migrate.svg)](https://pkg.go.dev/github.com/MrMirhan/a2migrate)
 [![Go 1.25](https://img.shields.io/badge/go-1.25-00ADD8?logo=go&logoColor=white)](https://go.dev/dl/)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](./LICENSE)
 
@@ -79,7 +78,7 @@ tarball below.
 Requires Go 1.25+.
 
 ```sh
-go install github.com/mirhan/a2migrate/cmd/a2migrate@latest
+go install github.com/MrMirhan/a2migrate/cmd/a2migrate@latest
 ```
 
 ### Build from source
