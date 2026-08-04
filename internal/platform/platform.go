@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 )
 
 // OS identifies the runtime operating system.
@@ -170,4 +171,26 @@ func DecodeCWD(encoded string) string {
 		return "/" + strings.ReplaceAll(encoded[1:], "-", "/")
 	}
 	return "/" + strings.ReplaceAll(encoded, "-", "/")
+}
+
+// NowUnixNanos returns a non-decreasing nanos-since-epoch counter that
+// is incremented by counter. Useful when callers need a unique id source
+// without dragging time into their signatures.
+func NowUnixNanos(counter int64) int64 {
+	if counter <= 0 {
+		counter = 1
+	}
+	now := time.Now().UnixNano()
+	if now <= 0 {
+		now = 1
+	}
+	return now + counter
+}
+
+// FormatUnixMillis renders ms-since-epoch as ISO-8601 with Z suffix.
+func FormatUnixMillis(ms int64) string {
+	if ms <= 0 {
+		return ""
+	}
+	return time.UnixMilli(ms).UTC().Format("2006-01-02T15:04:05.000Z")
 }
