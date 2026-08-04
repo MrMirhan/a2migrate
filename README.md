@@ -102,6 +102,12 @@ a2migrate
 ├── oc-mcp                          OC→CC: mcp{} → mcpServers{}
 ├── reverse                         run every OC→CC domain
 │
+├── sync                            bidirectional CC↔OC reconciler
+│   ├── all                         artifacts + sessions in both directions
+│   ├── artifacts                   mtime last-writer-wins per file
+│   ├── sessions                    CC → OC, uuid-deduped append-only
+│   └── reverse                     OC → CC, uuid-deduped append-only
+│
 └── version
 ```
 
@@ -145,11 +151,16 @@ helpers; this implementation merges them into one transactional stage.
 
 **Preserved:** session title, project directory, message text, reasoning,
 tool calls with input/output, subagent chains via `session.parent_id`,
-timestamps (ms-epoch), per-message role and agent.
+timestamps (ms-epoch), per-message role and agent, **per-message token
+counts** (`message.usage.input_tokens` / `output_tokens` /
+`cache_creation_input_tokens` / `cache_read_input_tokens` map onto OC's
+`tokens.{input,output,cache.{read,write}}`).
 
 **Not migrated:**
-- Cost and token counts (CC has them; OC schema requires real provider
-  attribution we don't have).
+- Cost: CC stores no cost anywhere (`cost_usd` is searched across all
+  32 user JSONLs with zero hits). OC→CC writes cost as an
+  `cost_usd` extension on the assistant JSONL line — CC ignores
+  unknown fields, OC reads them back.
 - Reasoning signatures (CC stores `signature` for replay; OC has no
   equivalent).
 - `last-prompt` and `attachment` records (CC bookkeeping, no OC analog).
@@ -169,9 +180,24 @@ timestamps (ms-epoch), per-message role and agent.
   pointing at the parent's OC session id.
 - Maps OC subagent metadata back into
   `~/.claude/projects/<encoded>/<parent-id>/subagents/agent-<id>.jsonl`.
+- Round-trips per-message `tokens` as a `usage` block on the assistant
+  JSONL line, plus `cost_usd` and `completedAt` extension fields.
 
 Artifacts go file-by-file (singular → plural directory rename, mcp{}
 → mcpServers{} transform).
+
+## Sync
+
+`a2migrate sync` reconciles CC and OC state in place. Two halves:
+
+| Subcommand | Mechanism |
+|---|---|
+| `sync artifacts` | mtime last-writer-wins per file. Files present on only one side propagate to the other. Mtime is preserved across copies so re-runs are no-ops. |
+| `sync sessions` | For each migrated session, parse CC + OC, find messages whose `ccOriginID` doesn't already exist in OC, append them. |
+| `sync reverse` | Same as `sync sessions` but in the opposite direction: append OC-only messages back into the CC JSONL. |
+| `sync all` | Artifacts + sessions in both directions. |
+
+All four are idempotent. Use `--dry-run` to preview. Use `--direction prefer-cc` / `--direction prefer-oc` to bias artifact sync.
 
 ## Development
 
