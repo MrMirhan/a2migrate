@@ -416,6 +416,9 @@ func buildMessageData(m *domain.Message, parentID string) (string, error) {
 	if parentID != "" {
 		raw["parentID"] = parentID
 	}
+	if m.OriginID != "" {
+		raw["ccOriginID"] = m.OriginID
+	}
 	b, err := json.Marshal(raw)
 	if err != nil {
 		return "", err

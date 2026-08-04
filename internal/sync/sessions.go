@@ -25,7 +25,14 @@ import (
 // Idempotent: re-running sync with no CC changes produces zero writes.
 func Sessions(ctx context.Context, dbPath string, dryRun bool) (*Report, error) {
 	cc := claudecode.NewSessionReader("")
-	r := &Report{CCHome: cc.CCHome, OCHome: dbPath}
+	return SessionsAt(ctx, cc.CCHome, dbPath, dryRun)
+}
+
+// SessionsAt is the same as Sessions but with explicit CC home override,
+// used by tests.
+func SessionsAt(ctx context.Context, ccHome, dbPath string, dryRun bool) (*Report, error) {
+	cc := claudecode.NewSessionReader(ccHome)
+	r := &Report{CCHome: ccHome, OCHome: dbPath}
 
 	db, err := opencode.OpenDatabase(ctx, dbPath)
 	if err != nil {
@@ -42,15 +49,15 @@ func Sessions(ctx context.Context, dbPath string, dryRun bool) (*Report, error) 
 		if ref.OriginID == "" {
 			continue
 		}
-		if err := syncOneSession(ctx, cc, db, ref, dryRun, r); err != nil {
+		if err := syncOneSession(ctx, ccHome, cc, db, ref, dryRun, r); err != nil {
 			r.Errors = append(r.Errors, err)
 		}
 	}
 	return r, nil
 }
 
-func syncOneSession(ctx context.Context, cc *claudecode.SessionReader, db *sql.DB, ref ocsrc.SessionRef, dryRun bool, r *Report) error {
-	ccPath, err := findCCPathForOrigin(ref.OriginID, ref.IsSubagent, ref.ParentID)
+func syncOneSession(ctx context.Context, ccHome string, cc *claudecode.SessionReader, db *sql.DB, ref ocsrc.SessionRef, dryRun bool, r *Report) error {
+	ccPath, err := findCCPathForOriginAt(ccHome, ref.OriginID, ref.IsSubagent, ref.ParentID)
 	if err != nil {
 		return err
 	}
@@ -77,7 +84,7 @@ func syncOneSession(ctx context.Context, cc *claudecode.SessionReader, db *sql.D
 
 	existing := map[string]bool{}
 	rows, err := db.QueryContext(ctx,
-		`SELECT json_extract(data, '$.parentID') FROM message WHERE session_id = ?`, ref.OCSessionID)
+		`SELECT json_extract(data, '$.ccOriginID') FROM message WHERE session_id = ?`, ref.OCSessionID)
 	if err != nil {
 		return err
 	}
@@ -173,7 +180,14 @@ func syncOneSession(ctx context.Context, cc *claudecode.SessionReader, db *sql.D
 // findCCPathForOrigin resolves the JSONL file path for a given CC origin
 // id, distinguishing main sessions from subagents.
 func findCCPathForOrigin(originID string, isSubagent bool, parentOrigin string) (string, error) {
-	projectsRoot := filepath.Join(platform.ClaudeCodeHome(), "projects")
+	return findCCPathForOriginAt(platform.ClaudeCodeHome(), originID, isSubagent, parentOrigin)
+}
+
+// findCCPathForOriginAt is the same as findCCPathForOrigin but with an
+// explicit CC home (used by tests and by callers that need to override
+// the platform default).
+func findCCPathForOriginAt(ccHome, originID string, isSubagent bool, parentOrigin string) (string, error) {
+	projectsRoot := filepath.Join(ccHome, "projects")
 	entries, err := os.ReadDir(projectsRoot)
 	if err != nil {
 		return "", err
@@ -321,15 +335,15 @@ func SessionsReverse(ctx context.Context, dbPath, ccHome string, dryRun bool) (*
 		if ref.OriginID == "" {
 			continue
 		}
-		if err := reverseSyncOne(ctx, dbPath, cc, db, ref, dryRun, r); err != nil {
+		if err := reverseSyncOne(ctx, ccHome, dbPath, cc, db, ref, dryRun, r); err != nil {
 			r.Errors = append(r.Errors, err)
 		}
 	}
 	return r, nil
 }
 
-func reverseSyncOne(ctx context.Context, dbPath string, cc *claudecode.SessionReader, db *sql.DB, ref ocsrc.SessionRef, dryRun bool, r *Report) error {
-	ccPath, err := findCCPathForOrigin(ref.OriginID, ref.IsSubagent, ref.ParentID)
+func reverseSyncOne(ctx context.Context, ccHome, dbPath string, cc *claudecode.SessionReader, db *sql.DB, ref ocsrc.SessionRef, dryRun bool, r *Report) error {
+	ccPath, err := findCCPathForOriginAt(ccHome, ref.OriginID, ref.IsSubagent, ref.ParentID)
 	if err != nil {
 		return err
 	}
