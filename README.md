@@ -227,10 +227,9 @@ Source/target stubs for the four planned tools exist under
 `internal/source/<tool>/` and `internal/target/<tool>/` — the layout
 is in place; only the per-tool format parsers remain.
 
-Multi-endpoint sync: `internal/config/` ships the schema
-(`a2migrate.toml`, version 1) and the example file is at
-`example.toml`. The `a2migrate remote sync` command is the next
-to land; for now single-machine migration + sync works.
+Multi-endpoint sync: `internal/config/` ships the schema for the
+future `a2migrate remote sync` command. For now single-machine migration
++ sync works.
 
 See `ROADMAP.md` for the full v0.2 → v0.4 plan including the work
 required for each new tool adapter.

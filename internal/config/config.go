@@ -6,7 +6,7 @@
 // when `a2migrate remote sync` ships. Until then, only single-endpoint
 // migrations work; the file format is forward-compatible.
 //
-// File format: TOML. Example (see ./example.toml):
+// File format: TOML. Schema version 1.
 //
 //	version = 1
 //	[[endpoint]]
