@@ -22,10 +22,10 @@ func ReadGlobalSkills() ([]domain.Skill, error) {
 }
 
 // ReadProjectSkills returns skills under ./.claude/skills/*.md.
-// cwd is the current working directory; resolvedDir is its canonical form.
+// Returns nil (no error) if the directory does not exist.
 func ReadProjectSkills(cwd string) ([]domain.Skill, error) {
 	dir := filepath.Join(cwd, ".claude", "skills")
-	return readMarkdownDir(dir, domain.OriginClaudeCode, false)
+	return readMarkdownDir(dir, domain.OriginClaudeCode, true)
 }
 
 // ReadGlobalCommands returns all slash commands under ~/.claude/commands/*.md.
@@ -44,9 +44,10 @@ func ReadGlobalCommands() ([]domain.Command, error) {
 }
 
 // ReadProjectCommands returns commands under ./.claude/commands/*.md.
+// Returns nil if missing.
 func ReadProjectCommands(cwd string) ([]domain.Command, error) {
 	dir := filepath.Join(cwd, ".claude", "commands")
-	entries, err := readMarkdownDir(dir, domain.OriginClaudeCode, false)
+	entries, err := readMarkdownDir(dir, domain.OriginClaudeCode, true)
 	if err != nil {
 		return nil, err
 	}
@@ -72,9 +73,10 @@ func ReadGlobalAgents() ([]domain.AgentDef, error) {
 }
 
 // ReadProjectAgents returns agents under ./.claude/agents/*.md.
+// Returns nil if missing.
 func ReadProjectAgents(cwd string) ([]domain.AgentDef, error) {
 	dir := filepath.Join(cwd, ".claude", "agents")
-	entries, err := readMarkdownDir(dir, domain.OriginClaudeCode, false)
+	entries, err := readMarkdownDir(dir, domain.OriginClaudeCode, true)
 	if err != nil {
 		return nil, err
 	}
@@ -101,9 +103,10 @@ func ReadGlobalRules() ([]domain.Rule, error) {
 }
 
 // ReadProjectRules returns rules under ./.claude/rules/*.md.
+// Returns nil if missing.
 func ReadProjectRules(cwd string) ([]domain.Rule, error) {
 	dir := filepath.Join(cwd, ".claude", "rules")
-	entries, err := readMarkdownDir(dir, domain.OriginClaudeCode, false)
+	entries, err := readMarkdownDir(dir, domain.OriginClaudeCode, true)
 	if err != nil {
 		return nil, err
 	}

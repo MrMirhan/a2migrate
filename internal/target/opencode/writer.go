@@ -126,28 +126,60 @@ func (w *SessionWriter) PlanSessions(ctx context.Context, sessions []domain.Sess
 	if err != nil {
 		return Plan{}, err
 	}
-	return w.planWithIDs(sessions, existing)
+	projects, err := ExistingProjectIDs(ctx, w.DB)
+	if err != nil {
+		return Plan{}, err
+	}
+	migrated, err := ExistingOriginIDs(ctx, w.DB)
+	if err != nil {
+		return Plan{}, err
+	}
+	return w.planWithIDs(sessions, existing, projects, migrated)
 }
 
-func (w *SessionWriter) planWithIDs(sessions []domain.Session, existing map[string]struct{}) (Plan, error) {
+func (w *SessionWriter) planWithIDs(sessions []domain.Session, existing map[string]struct{}, existingProjects map[string]struct{}, migrated map[string]struct{}) (Plan, error) {
 	plan := Plan{}
 	seenProjects := map[string]bool{}
 
-	// Pre-pass: figure out parent_session OC ids so subagent parent_id is set.
-	type ocID struct{ id string }
 	mainOCIDByCCOrigin := map[string]string{}
 
-	for _, s := range sessions {
+	addProject := func(s *domain.Session) {
+		pid := ProjectIDForWorktree(s.ProjectDir)
+		if seenProjects[pid] {
+			return
+		}
+		if _, ok := existingProjects[pid]; ok {
+			seenProjects[pid] = true
+			return
+		}
+		seenProjects[pid] = true
+		plan.NewProjects = append(plan.NewProjects, projectRow{
+			ID:          pid,
+			Worktree:    s.ProjectDir,
+			Name:        filepath.Base(s.ProjectDir),
+			TimeCreated: s.CreatedAt.UnixMilli(),
+			TimeUpdated: s.UpdatedAt.UnixMilli(),
+			Sandboxes:   "[]",
+		})
+	}
+
+	for i := range sessions {
+		s := &sessions[i]
 		if s.IsSubagent {
+			continue
+		}
+		if _, ok := migrated[s.OriginID]; ok {
 			continue
 		}
 		mainOCIDByCCOrigin[s.OriginID] = ""
 	}
 
-	// First pass — assign main session ids.
 	for i := range sessions {
 		s := &sessions[i]
 		if s.IsSubagent {
+			continue
+		}
+		if _, ok := migrated[s.OriginID]; ok {
 			continue
 		}
 		row, err := w.buildSessionRow(s, "", existing)
@@ -156,25 +188,15 @@ func (w *SessionWriter) planWithIDs(sessions []domain.Session, existing map[stri
 		}
 		mainOCIDByCCOrigin[s.OriginID] = row.ID
 		plan.Sessions = append(plan.Sessions, row)
-
-		pid := ProjectIDForWorktree(s.ProjectDir)
-		if !seenProjects[pid] {
-			seenProjects[pid] = true
-			plan.NewProjects = append(plan.NewProjects, projectRow{
-				ID:          pid,
-				Worktree:    s.ProjectDir,
-				Name:        filepath.Base(s.ProjectDir),
-				TimeCreated: s.CreatedAt.UnixMilli(),
-				TimeUpdated: s.UpdatedAt.UnixMilli(),
-				Sandboxes:   "[]",
-			})
-		}
+		addProject(s)
 	}
 
-	// Second pass — subagent sessions.
 	for i := range sessions {
 		s := &sessions[i]
 		if !s.IsSubagent {
+			continue
+		}
+		if _, ok := migrated[s.OriginID]; ok {
 			continue
 		}
 		parentOC := mainOCIDByCCOrigin[s.ParentID]
@@ -184,24 +206,15 @@ func (w *SessionWriter) planWithIDs(sessions []domain.Session, existing map[stri
 		}
 		mainOCIDByCCOrigin[s.OriginID] = row.ID
 		plan.Sessions = append(plan.Sessions, row)
-
-		pid := ProjectIDForWorktree(s.ProjectDir)
-		if !seenProjects[pid] {
-			seenProjects[pid] = true
-			plan.NewProjects = append(plan.NewProjects, projectRow{
-				ID:          pid,
-				Worktree:    s.ProjectDir,
-				Name:        filepath.Base(s.ProjectDir),
-				TimeCreated: s.CreatedAt.UnixMilli(),
-				TimeUpdated: s.UpdatedAt.UnixMilli(),
-				Sandboxes:   "[]",
-			})
-		}
+		addProject(s)
 	}
 
 	// Build messages + parts per session.
 	for i := range sessions {
 		s := &sessions[i]
+		if _, ok := migrated[s.OriginID]; ok {
+			continue
+		}
 		row := findSessionRow(plan.Sessions, mainOCIDByCCOrigin[s.OriginID])
 		if row == nil {
 			return Plan{}, fmt.Errorf("internal: missing session row for %s", s.OriginID)

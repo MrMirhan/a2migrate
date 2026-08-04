@@ -166,6 +166,46 @@ func ExistingIDs(ctx context.Context, db *sql.DB) (map[string]struct{}, error) {
 	return out, nil
 }
 
+// ExistingProjectIDs returns all currently-known project ids so the writer
+// can skip projects that are already in the database.
+func ExistingProjectIDs(ctx context.Context, db *sql.DB) (map[string]struct{}, error) {
+	rows, err := db.QueryContext(ctx, "SELECT id FROM project")
+	if err != nil {
+		return nil, fmt.Errorf("query project ids: %w", err)
+	}
+	defer rows.Close()
+	out := map[string]struct{}{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out[id] = struct{}{}
+	}
+	return out, rows.Err()
+}
+
+// ExistingOriginIDs returns every CC origin id already migrated (extracted
+// from session.metadata). Used to make PlanSessions idempotent.
+func ExistingOriginIDs(ctx context.Context, db *sql.DB) (map[string]struct{}, error) {
+	rows, err := db.QueryContext(ctx,
+		`SELECT json_extract(metadata, '$.claude_code_origin') FROM session
+		 WHERE json_extract(metadata, '$.claude_code_origin') IS NOT NULL`)
+	if err != nil {
+		return nil, fmt.Errorf("query origin ids: %w", err)
+	}
+	defer rows.Close()
+	out := map[string]struct{}{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out[id] = struct{}{}
+	}
+	return out, rows.Err()
+}
+
 // IsConstraintError reports whether err looks like a SQLite UNIQUE / PRIMARY
 // KEY violation.
 func IsConstraintError(err error) bool {
