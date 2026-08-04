@@ -91,15 +91,3 @@ Config schema shipped in v0.1 (`internal/config/`). What's missing:
 - **`a2migrate verify --strict`** — checks for orphan records (CC side
   deleted a JSONL but OC row survives). Today verify is informational;
   strict mode would error.
-
-## Decisions still pending
-
-- **License** — MIT today. If any planned tool upstream is
-  copyleft-licensed, decide whether a2migrate can interoperate via
-  format conversion only.
-- **Plugin model** — Go plugins (`build -buildmode=plugin`) are fragile
-  cross-platform; embedding (compile-time) is simpler but requires a
-  PR per adapter. We've gone with embedded for v0.1. Revisit if
-  community grows.
-- **Telemetry** — opt-in, anonymous, no session content. Implement
-  before any cloud-mode add-on lands.

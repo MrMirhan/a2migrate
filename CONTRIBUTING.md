@@ -86,3 +86,15 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 GoReleaser parses these for changelog grouping. Commits that don't
 match still land in the release under "Other".
+
+### Hard rules
+
+- **No telemetry.** The binary makes no network calls except those the
+  user explicitly invokes. No usage reporting, no crash dumps, no
+  update checks, no phoning home. If your PR adds one, it will be
+  rejected — even an opt-in one. State this in the PR description so
+  reviewers don't have to look.
+- **No bundled analytics SDKs.** Same reasoning.
+- **Vendoring:** `go mod tidy` and standard `go.mod` are enough. No
+  replace directives; nothing should require `git clone` of an
+  external repo to build.
