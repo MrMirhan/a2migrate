@@ -103,7 +103,7 @@ func (r *SessionReader) countSessionFiles(encoded string) (main, sub int) {
 			if e.Name() == "tool-results" {
 				continue
 			}
-			subDir := filepath.Join(dir, e.Name())
+			subDir := filepath.Join(dir, e.Name(), "subagents")
 			subEntries, err := os.ReadDir(subDir)
 			if err != nil {
 				continue
@@ -156,7 +156,7 @@ func (r *SessionReader) DiscoverSessions() ([]SessionRef, error) {
 				if e.Name() == "tool-results" {
 					continue
 				}
-				subRefs := scanSubagentDir(full, p)
+				subRefs := scanSubagentDir(filepath.Join(full, "subagents"), p, e.Name())
 				out = append(out, subRefs...)
 				continue
 			}
@@ -182,12 +182,11 @@ func (r *SessionReader) DiscoverSessions() ([]SessionRef, error) {
 	return out, nil
 }
 
-func scanSubagentDir(dir string, p Project) []SessionRef {
+func scanSubagentDir(dir string, p Project, parentSession string) []SessionRef {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil
 	}
-	parent := filepath.Base(dir) // <session-uuid> from path
 	var out []SessionRef
 	for _, e := range entries {
 		if e.IsDir() || !strings.HasSuffix(e.Name(), ".jsonl") {
@@ -203,7 +202,7 @@ func scanSubagentDir(dir string, p Project) []SessionRef {
 			ProjectID:  p.ID,
 			Worktree:   p.Worktree,
 			IsSubagent: true,
-			ParentID:   parent,
+			ParentID:   parentSession,
 			SizeBytes:  info.Size(),
 			UpdatedAt:  info.ModTime().Unix(),
 		})

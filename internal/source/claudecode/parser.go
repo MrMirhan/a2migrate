@@ -81,6 +81,16 @@ func (r *SessionReader) ParseSession(path string) (domain.Session, error) {
 		FilePath: path,
 		OriginID: origin,
 	}
+	// Detect subagent files by path layout: <projects>/<enc>/<sid>/subagents/<file>
+	if strings.Contains(filepath.ToSlash(path), "/subagents/") {
+		ref.IsSubagent = true
+		dir := filepath.Dir(filepath.ToSlash(path))
+		// dir is .../<sid>/subagents — parent basename is the sid
+		parts := strings.Split(dir, "/")
+		if len(parts) >= 1 {
+			ref.ParentID = parts[len(parts)-2]
+		}
+	}
 	return parseSessionStream(f, ref, slog.Default())
 }
 

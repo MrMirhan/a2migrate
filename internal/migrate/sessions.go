@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/mirhan/a2migrate/internal/domain"
@@ -98,10 +99,12 @@ func (m *SessionMigrator) Discover(ctx context.Context) ([]claudecode.SessionRef
 }
 
 // Selected applies Include/Exclude/Search filters to refs.
+// Subagent sessions whose parent was matched are pulled in automatically.
 func (m *SessionMigrator) Selected(refs []claudecode.SessionRef) []claudecode.SessionRef {
 	includes := setFromStrings(m.Options.Includes)
 	excludes := setFromStrings(m.Options.Excludes)
 	search := strings.ToLower(strings.TrimSpace(m.Options.Search))
+	selected := map[string]bool{}
 	var out []claudecode.SessionRef
 	for _, r := range refs {
 		if len(includes) > 0 && !includes[r.OriginID] {
@@ -116,8 +119,23 @@ func (m *SessionMigrator) Selected(refs []claudecode.SessionRef) []claudecode.Se
 				continue
 			}
 		}
+		selected[r.OriginID] = true
 		out = append(out, r)
 	}
+	// Auto-include subagents whose parent was selected.
+	for _, r := range refs {
+		if r.IsSubagent && selected[r.ParentID] && !selected[r.OriginID] {
+			selected[r.OriginID] = true
+			out = append(out, r)
+		}
+	}
+	// Re-sort for determinism (parent before subagent).
+	sort.SliceStable(out, func(i, j int) bool {
+		if out[i].FilePath != out[j].FilePath {
+			return out[i].FilePath < out[j].FilePath
+		}
+		return out[i].OriginID < out[j].OriginID
+	})
 	return out
 }
 
