@@ -27,7 +27,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: '1.25'
           cache: true
 
       # Resolve the tag when triggered manually.
@@ -44,7 +44,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
-          version: v2.7.2   # pinned; bump via PR after testing
+          version: v2.17.1  # pinned; bump via PR after testing
           distribution: goreleaser   # OSS build
           args: release --clean --skip=sign
         env:

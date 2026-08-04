@@ -26,7 +26,6 @@ builds:
     mod_timestamp: "{{ .CommitTimestamp }}"
     flags:
       - -trimpath
-      - -s -w
     ldflags:
       - -s -w
       - -X github.com/mirhan/a2migrate/internal/version.Version={{ .Version }}
@@ -49,38 +48,38 @@ builds:
 archives:
   - id: default
     formats: [tar.gz]
-    # This appended to the binary name above; produces:
+    # Produces:
     #   a2migrate_Linux_x86_64.tar.gz
     #   a2migrate_Darwin_arm64.tar.gz
     #   a2migrate_Windows_x86_64.zip
-    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Armv7 }}_v7{{ end }}{{ if .Mips }}{{ .Mips }}{{ end }}"
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
     files:
       - LICENSE
       - README.md
       - CHANGELOG.md
     format_overrides:
       - goos: windows
-        format: zip
-    rlcp: true
+        formats: [zip]
 
 checksum:
   name_template: '{{ .ProjectName }}_{{ .Version }}_SHA256SUMS'
   algorithm: sha256
 
-signs:
-  - artifacts: checksum
-    cmd: cosign
-    signature: '${artifact}.sig'
-    output: '${artifact}.intoto.jsonl'
-    # Uncomment after configuring cosign.
-    # args: ["sign-blob", "--output-signature", "${signature}", "--bundle", "${output}"]
-  - artifacts: archive
-    cmd: cosign
-    signature: '${artifact}.sig'
-    output: '${artifact}.intoto.jsonl'
+# Artifact signing — uncomment once cosign is configured and the release
+# workflow has a signing identity. An enabled block without `args` runs
+# cosign with no arguments and fails every release.
+# signs:
+#   - artifacts: checksum
+#     cmd: cosign
+#     args: ["sign-blob", "--output-signature", "${signature}", "--bundle", "${output}", "${artifact}"]
+#     signature: '${artifact}.sig'
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 
 changelog:
   # Conventional commits parsed automatically.
@@ -128,16 +127,21 @@ release:
     ## a2migrate {{ .Version }}
 
     Released {{ .CommitDate }}. Binary downloads below.
+  # No .Os/.Arch here: release notes render once, not per artifact, so
+  # those keys are undefined and abort the release.
   footer: |
 
     ## Install
 
     ```sh
-    curl -fsSL https://github.com/MrMirhan/a2migrate/releases/download/v{{ .Version }}/a2migrate_{{ .Os }}_{{ .Arch }}.tar.gz | tar -xz
+    curl -fsSL https://github.com/MrMirhan/a2migrate/releases/download/v{{ .Version }}/a2migrate_Linux_x86_64.tar.gz | tar -xz
     sudo mv a2migrate /usr/local/bin/
     a2migrate version
     ```
-  format: tarball
+
+    Swap `Linux_x86_64` for `Linux_arm64`, `Darwin_arm64`,
+    `Darwin_x86_64`, or `Windows_x86_64` as needed. Verify against
+    `a2migrate_{{ .Version }}_SHA256SUMS`.
 
 # brew tap configuration — uncomment to enable.
 #
@@ -161,7 +165,3 @@ release:
 #       owner: MrMirhan
 #       name: scoop-bucket
 
-source:
-  owner: MrMirhan
-  name: a2migrate
-  branch: main
