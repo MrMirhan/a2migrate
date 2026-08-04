@@ -7,6 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/mirhan/a2migrate/internal/logging"
+	"github.com/mirhan/a2migrate/internal/platform"
 )
 
 // RootLogger is the slog logger the root command was last configured
@@ -44,7 +45,10 @@ func NewRootCmd(logger *slog.Logger) *cobra.Command {
 	pf.BoolVar(&noColor, "no-color", false, "Disable color output")
 	pf.BoolVar(&jsonOut, "json", false, "Emit machine-readable JSON output where supported")
 	pf.StringVar(&logFormat, "log-format", "text", "Log format: text | json")
-	pf.StringVar(&logLevel, "log-level", "info", "Log level: error | warn | info | debug")
+	// The flag's default comes from the environment so A2MIGRATE_LOG_LEVEL
+	// applies when --log-level is absent, and loses to it when present.
+	pf.StringVar(&logLevel, "log-level", platform.EnvOr("A2MIGRATE_LOG_LEVEL", "info"),
+		"Log level: error | warn | info | debug (env: A2MIGRATE_LOG_LEVEL)")
 
 	root.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {
 		level := logging.ParseLevel(logLevel)

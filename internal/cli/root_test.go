@@ -184,3 +184,17 @@ func writeFile(t *testing.T, path, body string) {
 		t.Fatal(err)
 	}
 }
+
+// TestRoot_LogLevelFromEnv covers the A2MIGRATE_LOG_LEVEL override the
+// README documents; the flag must still win when both are given.
+func TestRoot_LogLevelFromEnv(t *testing.T) {
+	t.Setenv("A2MIGRATE_LOG_LEVEL", "warn")
+	if got := NewRootCmd(nil).PersistentFlags().Lookup("log-level").DefValue; got != "warn" {
+		t.Fatalf("log-level default = %q, want the env value", got)
+	}
+
+	t.Setenv("A2MIGRATE_LOG_LEVEL", "")
+	if got := NewRootCmd(nil).PersistentFlags().Lookup("log-level").DefValue; got != "info" {
+		t.Fatalf("log-level default = %q, want info when the env is unset", got)
+	}
+}

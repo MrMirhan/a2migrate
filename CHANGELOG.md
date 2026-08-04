@@ -46,6 +46,11 @@ GoReleaser parses them and groups entries by type.
 - Session migration emits `ccOriginID` in the OC `message.data` blob
   so sync can deduplicate appends by uuid.
 
+### Fixed
+
+- `A2MIGRATE_LOG_LEVEL` now actually sets the log level. It was
+  documented but never wired, so only `--log-level` had any effect.
+
 ### Notes
 
 - This is the v0.1 release line. Public API may evolve; pin to
