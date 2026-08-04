@@ -147,7 +147,7 @@ func newMCPCmd() *cobra.Command {
 func newAllCmd() *cobra.Command {
 	var (
 		dryRun, yes, backup bool
-		cwd                 string
+		cwd, to, search     string
 	)
 	c := &cobra.Command{
 		Use:   "all",
@@ -159,7 +159,7 @@ func newAllCmd() *cobra.Command {
 			if err := runArtifacts(cmd.Context(), migrate.ArtifactsMigrator{CWD: cwd, DryRun: dryRun}, cmd); err != nil {
 				return err
 			}
-			flags := &sessionsMigrateFlags{dryRun: dryRun, yes: yes, backup: backup, from: "", to: "", skipRepair: false}
+			flags := &sessionsMigrateFlags{dryRun: dryRun, yes: yes, backup: backup, to: to, search: search}
 			_, err := runSessionsMigrate(cmd.Context(), flags, migrate.Options{})
 			if err != nil {
 				return err
@@ -172,6 +172,8 @@ func newAllCmd() *cobra.Command {
 	f.BoolVar(&yes, "yes", false, "Skip confirmation")
 	f.BoolVar(&backup, "backup", false, "Backup before apply")
 	f.StringVar(&cwd, "cwd", "", "Project root")
+	f.StringVar(&to, "to", "", "Override OpenCode database path")
+	f.StringVar(&search, "search", "", "Substring filter on session id or file path")
 	return c
 }
 

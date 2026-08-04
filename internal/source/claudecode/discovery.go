@@ -60,7 +60,7 @@ type Project struct {
 // DiscoverProjects scans the projects directory and returns one Project per
 // encoded-cwd directory. Sorted by Encoded for determinism.
 func (r *SessionReader) DiscoverProjects() ([]Project, error) {
-	dir := platform.ClaudeCodeProjectsDir()
+	dir := filepath.Join(r.CCHome, "projects")
 	if !platform.IsDir(dir) {
 		return nil, nil
 	}
@@ -93,7 +93,7 @@ func (r *SessionReader) DiscoverProjects() ([]Project, error) {
 }
 
 func (r *SessionReader) countSessionFiles(encoded string) (main, sub int) {
-	dir := filepath.Join(platform.ClaudeCodeProjectsDir(), encoded)
+	dir := filepath.Join(r.CCHome, "projects", encoded)
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return 0, 0
@@ -135,7 +135,7 @@ type SessionRef struct {
 // DiscoverSessions returns all main and subagent session JSONL files
 // across all projects. Sorted by FilePath for determinism.
 func (r *SessionReader) DiscoverSessions() ([]SessionRef, error) {
-	dir := platform.ClaudeCodeProjectsDir()
+	dir := filepath.Join(r.CCHome, "projects")
 	if !platform.IsDir(dir) {
 		return nil, ErrNoSessions
 	}
