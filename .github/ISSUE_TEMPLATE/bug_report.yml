@@ -1,0 +1,80 @@
+name: Bug report
+description: Something migrated wrong, crashed, or lost data.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: re-run the command with `--dry-run` and
+        `--log-level debug`. That output usually contains the answer and
+        always makes the report actionable.
+
+        If this is a security issue, do not file it here — use a
+        [private advisory](https://github.com/MrMirhan/a2migrate/security/advisories/new).
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `a2migrate version`.
+      placeholder: a2migrate v0.1.0 (commit abc1234, built ..., linux/amd64, go1.25)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: direction
+    attributes:
+      label: Direction
+      options:
+        - Claude Code to OpenCode
+        - OpenCode to Claude Code
+        - sync (both)
+        - not direction-specific
+    validations:
+      required: true
+
+  - type: input
+    id: command
+    attributes:
+      label: Command
+      description: The exact command you ran.
+      placeholder: a2migrate migrate claude-code opencode sessions --search auth --yes
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: |
+        Run with `--log-level debug` and paste the output. Redact
+        anything sensitive — transcript titles and file paths can be
+        revealing.
+      render: shell
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Platform
+      options:
+        - Linux
+        - macOS
+        - Windows
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: data
+    attributes:
+      label: Data safety
+      options:
+        - label: I understand maintainers may ask for a minimal session file that reproduces this, and that I am responsible for redacting it.

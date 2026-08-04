@@ -1,0 +1,42 @@
+name: Feature request
+description: Propose a capability, a domain, or support for another tool.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Adding a tool is mostly adapter work — see
+        [Adding a new target system](https://github.com/MrMirhan/a2migrate/blob/main/architecture.md#adding-a-new-target-system)
+        and [ROADMAP.md](https://github.com/MrMirhan/a2migrate/blob/main/ROADMAP.md)
+        before filing, in case it is already planned.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do that you cannot do today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: |
+        If it is a new command or flag, write the command line you want
+        to be able to type.
+    validations:
+      required: true
+
+  - type: input
+    id: tool
+    attributes:
+      label: Tool involved
+      description: Leave blank if this is not about a specific AI coding CLI.
+      placeholder: Codex, Gemini CLI, Cursor, ...
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you do instead today
+      description: Manual workaround, another tool, or nothing.
