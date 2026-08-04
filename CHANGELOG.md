@@ -10,10 +10,15 @@ is maintained by hand and ships inside the release archives.
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-08-04
+## [0.1.1] - 2026-08-04
 
-First public release. Migrates state between Claude Code and OpenCode in
+First usable release. Migrates state between Claude Code and OpenCode in
 both directions.
+
+v0.1.0 was tagged with the module path `github.com/mirhan/a2migrate`,
+which is a different account's namespace, so `go install` could never
+resolve it. The Go module proxy caches versions immutably, so that
+number cannot be corrected and was retired.
 
 ### Added
 
