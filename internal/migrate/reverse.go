@@ -13,19 +13,6 @@ import (
 	"github.com/mirhan/a2migrate/internal/target/claudecode"
 )
 
-// ReverseOptions configure an OC → CC migration run.
-type ReverseOptions struct {
-	From       string // OC db path override
-	To         string // CC home override
-	DryRun     bool
-	Yes        bool
-	Includes   []string // OC session ids to include
-	Excludes   []string // OC session ids to skip
-	Search     string
-	SkipNative bool // skip sessions without claude_code_origin
-	Logger     *slog.Logger
-}
-
 // ReverseResult is one migrated row.
 type ReverseResult struct {
 	OCSessionID   string
@@ -53,15 +40,18 @@ type ReverseReport struct {
 // ReverseMigrator orchestrates discovery → parse → emit JSONL.
 type ReverseMigrator struct {
 	Source  *opencode.SessionReader
-	Options ReverseOptions
+	Options Options
 	Logger  *slog.Logger
 }
 
-// NewReverseMigrator wires defaults.
-func NewReverseMigrator(opts ReverseOptions) *ReverseMigrator {
+// NewReverseMigrator wires defaults and pins Direction to ToClaudeCode —
+// this constructor only ever runs the OC -> CC pipeline, regardless of
+// what the caller set.
+func NewReverseMigrator(opts Options) *ReverseMigrator {
 	if opts.Logger == nil {
 		opts.Logger = slog.Default()
 	}
+	opts.Direction = ToClaudeCode
 	return &ReverseMigrator{
 		Source:  opencode.NewSessionReader(opts.From),
 		Options: opts,
@@ -140,6 +130,9 @@ func (m *ReverseMigrator) Run(ctx context.Context, refs []opencode.SessionRef) (
 			rep.Results = append(rep.Results, ReverseResult{OCSessionID: r.OCSessionID, Error: fmt.Errorf("parse: %w", err)})
 			continue
 		}
+		if newTitle, ok := m.Options.Renames[r.OCSessionID]; ok && newTitle != "" {
+			sess.Title = newTitle
+		}
 		if m.Options.DryRun {
 			mainOCIDByOrigin[r.OriginID] = r.OCSessionID
 			ccHome := m.Options.To
@@ -149,7 +142,7 @@ func (m *ReverseMigrator) Run(ctx context.Context, refs []opencode.SessionRef) (
 			rep.Results = append(rep.Results, ReverseResult{
 				OCSessionID: r.OCSessionID,
 				OriginID:    r.OriginID,
-				Title:       r.Title,
+				Title:       sess.Title,
 				ProjectDir:  r.Worktree,
 				OutputPath:  filepath.Join(ccHome, "projects", platformEncode(r.Worktree), r.OriginID+".jsonl"),
 			})
@@ -185,6 +178,9 @@ func (m *ReverseMigrator) Run(ctx context.Context, refs []opencode.SessionRef) (
 			rep.Results = append(rep.Results, ReverseResult{OCSessionID: r.OCSessionID, Error: fmt.Errorf("parse: %w", err)})
 			continue
 		}
+		if newTitle, ok := m.Options.Renames[r.OCSessionID]; ok && newTitle != "" {
+			sess.Title = newTitle
+		}
 		// Use the OC parent id if available; otherwise the parent's CC origin id.
 		var parentOC string
 		if r.ParentID != "" {
@@ -194,7 +190,7 @@ func (m *ReverseMigrator) Run(ctx context.Context, refs []opencode.SessionRef) (
 			rep.Results = append(rep.Results, ReverseResult{
 				OCSessionID: r.OCSessionID,
 				OriginID:    r.OriginID,
-				Title:       r.Title,
+				Title:       sess.Title,
 				ProjectDir:  r.Worktree,
 				IsSubagent:  true,
 				OutputPath:  "would-write subagent for parent " + parentOC,

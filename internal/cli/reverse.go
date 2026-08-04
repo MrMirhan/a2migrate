@@ -36,7 +36,7 @@ func newOCSessionsListCmd() *cobra.Command {
 		Use:   "list",
 		Short: "List discovered OpenCode sessions",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			opts := migrate.ReverseOptions{From: resolveOCDB(from), Search: search, SkipNative: skipNative}
+			opts := migrate.Options{From: resolveOCDB(from), Search: search, SkipNative: skipNative}
 			m := migrate.NewReverseMigrator(opts)
 			refs, err := m.Discover(cmd.Context())
 			if err != nil {
@@ -125,7 +125,7 @@ func newOCSessionsMigrateCmd() *cobra.Command {
 		Use:   "migrate",
 		Short: "Migrate OpenCode sessions back to Claude Code JSONL",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			opts := migrate.ReverseOptions{
+			opts := migrate.Options{
 				From:       resolveOCDB(from),
 				To:         resolveCCHome(to),
 				DryRun:     dryRun,

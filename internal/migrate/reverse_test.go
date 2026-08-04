@@ -56,7 +56,7 @@ func seedOCDB(t *testing.T) string {
 func TestReverseMigrator_Run_Basic(t *testing.T) {
 	dbPath := seedOCDB(t)
 	ccRoot := t.TempDir()
-	m := NewReverseMigrator(ReverseOptions{From: dbPath, To: ccRoot, Yes: true})
+	m := NewReverseMigrator(Options{From: dbPath, To: ccRoot, Yes: true})
 	refs, err := m.Discover(context.Background())
 	if err != nil {
 		t.Fatal(err)
@@ -89,10 +89,51 @@ func TestReverseMigrator_Run_Basic(t *testing.T) {
 	}
 }
 
+func TestReverseMigrator_Run_Rename(t *testing.T) {
+	dbPath := seedOCDB(t)
+	ccRoot := t.TempDir()
+	m := NewReverseMigrator(Options{
+		From:    dbPath,
+		To:      ccRoot,
+		Yes:     true,
+		Renames: map[string]string{"ses_main": "Renamed Title"},
+	})
+	refs, err := m.Discover(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	report, err := m.Run(context.Background(), refs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var found bool
+	for _, r := range report.Results {
+		if r.OCSessionID != "ses_main" {
+			continue
+		}
+		found = true
+		if r.Title != "Renamed Title" {
+			t.Fatalf("report title = %q want %q", r.Title, "Renamed Title")
+		}
+	}
+	if !found {
+		t.Fatal("ses_main result not found")
+	}
+
+	mainPath := filepath.Join(ccRoot, "projects", "-fixture", "cc-1.jsonl")
+	body, err := os.ReadFile(mainPath)
+	if err != nil {
+		t.Fatalf("main file missing: %v", err)
+	}
+	if !strings.Contains(string(body), `"title":"Renamed Title"`) {
+		t.Fatalf("jsonl missing renamed title: %s", body)
+	}
+}
+
 func TestReverseMigrator_Run_DryRun(t *testing.T) {
 	dbPath := seedOCDB(t)
 	ccRoot := t.TempDir()
-	m := NewReverseMigrator(ReverseOptions{From: dbPath, To: ccRoot, DryRun: true})
+	m := NewReverseMigrator(Options{From: dbPath, To: ccRoot, DryRun: true})
 	refs, _ := m.Discover(context.Background())
 	report, err := m.Run(context.Background(), refs)
 	if err != nil {
@@ -110,7 +151,7 @@ func TestReverseMigrator_Run_DryRun(t *testing.T) {
 
 func TestReverseMigrator_FilterNative(t *testing.T) {
 	dbPath := seedOCDB(t)
-	m := NewReverseMigrator(ReverseOptions{From: dbPath, SkipNative: true})
+	m := NewReverseMigrator(Options{From: dbPath, SkipNative: true})
 	refs, err := m.Discover(context.Background())
 	if err != nil {
 		t.Fatal(err)

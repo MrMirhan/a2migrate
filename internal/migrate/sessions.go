@@ -20,18 +20,39 @@ import (
 	"github.com/mirhan/a2migrate/internal/target/opencode"
 )
 
-// Options configure a session migration run.
+// Direction selects which side of a one-shot migration is the source and
+// which is the target.
+//
+// This is distinct from sync.Direction (internal/sync): that type picks a
+// last-writer-wins tie-break rule for continuous bidirectional sync
+// (NewerWins/PreferCC/PreferOC), not a migration direction. The two are
+// never interchangeable; always reference them package-qualified
+// (migrate.Direction vs sync.Direction) where both are in scope.
+type Direction string
+
+const (
+	// ToOpenCode migrates Claude Code sessions into OpenCode.
+	ToOpenCode Direction = "to-opencode"
+	// ToClaudeCode migrates OpenCode sessions back into Claude Code.
+	ToClaudeCode Direction = "to-claudecode"
+)
+
+// Options configure a migration run in either Direction. Fields marked
+// "ToOpenCode only" / "ToClaudeCode only" only affect that pipeline; the
+// constructor for the other direction ignores them.
 type Options struct {
-	From        string // CC home override (empty = platform default)
-	To          string // OC db path override
-	BackupDir   string // backup location (empty = skip)
+	Direction   Direction // which pipeline runs; set by the constructor used, not by the caller
+	From        string    // source override (CC home for ToOpenCode, OC db path for ToClaudeCode)
+	To          string    // target override (OC db path for ToOpenCode, CC home for ToClaudeCode)
+	BackupDir   string    // backup location before writing (empty = skip)
 	DryRun      bool
 	Yes         bool
-	Renames     map[string]string // originID -> new title
-	Includes    []string          // originIDs to include
-	Excludes    []string          // originIDs to skip
+	Renames     map[string]string // source session id -> new title
+	Includes    []string          // source session ids to include
+	Excludes    []string          // source session ids to skip
 	Search      string            // case-insensitive substring filter
-	SkipRepair  bool              // skip post-fix invariants
+	SkipRepair  bool              // ToOpenCode only: skip post-fix invariants
+	SkipNative  bool              // ToClaudeCode only: skip sessions without claude_code_origin
 	Concurrency int               // reserved for future use
 	Logger      *slog.Logger      // optional; defaults to slog.Default
 }
@@ -74,11 +95,14 @@ type SessionMigrator struct {
 	Logger  *slog.Logger
 }
 
-// NewSessionMigrator wires defaults for fields the caller left blank.
+// NewSessionMigrator wires defaults for fields the caller left blank and
+// pins Direction to ToOpenCode — this constructor only ever runs the
+// CC -> OC pipeline, regardless of what the caller set.
 func NewSessionMigrator(opts Options) *SessionMigrator {
 	if opts.Logger == nil {
 		opts.Logger = slog.Default()
 	}
+	opts.Direction = ToOpenCode
 	return &SessionMigrator{
 		Source:  claudecode.NewSessionReader(opts.From),
 		Options: opts,

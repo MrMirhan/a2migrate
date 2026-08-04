@@ -219,7 +219,7 @@ func newReverseCmd() *cobra.Command {
 					return err
 				}
 			}
-			opts := migrate.ReverseOptions{
+			opts := migrate.Options{
 				From:       resolveOCDB(from),
 				To:         resolveCCHome(to),
 				DryRun:     dryRun,
