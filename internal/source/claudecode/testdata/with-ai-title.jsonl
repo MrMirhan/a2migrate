@@ -1,0 +1,5 @@
+{"type":"user","uuid":"u1","sessionId":"s4","timestamp":"2026-07-20T13:00:00Z","cwd":"/tmp/proj4","message":{"role":"user","content":"Tell me about Go"}}
+{"type":"assistant","uuid":"a1","parentUuid":"u1","sessionId":"s4","timestamp":"2026-07-20T13:00:01Z","cwd":"/tmp/proj4","message":{"role":"assistant","content":[{"type":"text","text":"Go is a statically typed, compiled language designed at Google."}]}}
+{"type":"ai-title","title":"Go language overview"}
+{"type":"assistant","uuid":"a2","parentUuid":"a1","sessionId":"s4","timestamp":"2026-07-20T13:00:05Z","cwd":"/tmp/proj4","message":{"role":"assistant","content":[{"type":"text","text":"Let me know if you have more questions."}]}}
+{"type":"last-prompt","leafUuid":"a2","timestamp":"2026-07-20T13:00:10Z"}
