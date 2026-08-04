@@ -1,0 +1,81 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v0.1.0). Defaults to the latest pushed tag."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: goreleaser
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history for changelog generation
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      # Resolve the tag when triggered manually.
+      - name: Resolve tag
+        id: tag
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=$(git describe --tags --abbrev=0)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run GoReleaser (dry-run on manual dispatch unless explicitly released)
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: latest
+          distribution: goreleaser-pro   # free OSS version
+          args: release --clean --skip=sign
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Optional: upload the artifacts as a workflow artifact (useful
+      # for `gh run download` while debugging).
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: a2migrate-binaries
+          path: dist/*
+          if-no-files-found: ignore
+          retention-days: 30
+
+  docker:
+    # Optional mirror as a scratch image. Triggered only on tag pushes;
+    # disabled by default to keep CI fast. Flip run-on labels to enable.
+    if: false
+    name: docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: a2migrate:${{ github.ref_name }}
+          platforms: linux/amd64,linux/arm64

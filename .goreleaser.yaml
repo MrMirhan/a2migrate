@@ -1,0 +1,162 @@
+# GoReleaser configuration for a2migrate.
+# Docs: https://goreleaser.com
+#
+# CI flow:
+#   1. Tag a release:  git tag -s v0.1.0 -m "..."
+#   2. Push the tag:   git push origin v0.1.0
+#   3. The release workflow runs GoReleaser, builds 5 OS/arch targets,
+#      produces .tar.gz / .zip archives + .sha256 files, drafts a
+#      GitHub Release from CHANGELOG.md entries, attaches binaries.
+
+version: 2
+
+project_name: a2migrate
+
+before:
+  hooks:
+    - go mod tidy
+    - go vet ./...
+
+builds:
+  - id: a2migrate
+    main: ./cmd/a2migrate
+    binary: a2migrate
+    env:
+      - CGO_ENABLED=0
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
+      - -s -w
+    ldflags:
+      - -s -w
+      - -X github.com/mirhan/a2migrate/internal/version.Version={{ .Version }}
+      - -X github.com/mirhan/a2migrate/internal/version.Commit={{ .ShortCommit }}
+      - -X github.com/mirhan/a2migrate/internal/version.BuildDate={{ .CommitDate }}
+    # Pure-Go SQLite is the only CGO surface; disable elsewhere for
+    # smaller, more portable binaries.
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      # windows/arm64 isn't supported by Go's sqlite driver on some toolchains.
+      - goos: windows
+        goarch: arm64
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    # This appended to the binary name above; produces:
+    #   a2migrate_Linux_x86_64.tar.gz
+    #   a2migrate_Darwin_arm64.tar.gz
+    #   a2migrate_Windows_x86_64.zip
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Armv7 }}_v7{{ end }}{{ if .Mips }}{{ .Mips }}{{ end }}"
+    files:
+      - LICENSE
+      - README.md
+      - CHANGELOG.md
+    format_overrides:
+      - goos: windows
+        format: zip
+    rlcp: true
+
+checksum:
+  name_template: '{{ .ProjectName }}_{{ .Version }}_SHA256SUMS'
+  algorithm: sha256
+
+signs:
+  - artifacts: checksum
+    cmd: cosign
+    signature: '${artifact}.sig'
+    output: '${artifact}.intoto.jsonl'
+    # Uncomment after configuring cosign.
+    # args: ["sign-blob", "--output-signature", "${signature}", "--bundle", "${output}"]
+  - artifacts: archive
+    cmd: cosign
+    signature: '${artifact}.sig'
+    output: '${artifact}.intoto.jsonl'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  # Conventional commits parsed automatically.
+  # Disable if your release commits don't follow the spec.
+  use: git
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
+  groups:
+    - title: Features
+      regexp: "^feat"
+      order: 0
+    - title: Bug Fixes
+      regexp: "^fix"
+      order: 1
+    - title: Performance
+      regexp: "^perf"
+      order: 2
+    - title: Refactors
+      regexp: "^refactor"
+      order: 3
+    - title: Documentation
+      regexp: "^docs"
+      order: 4
+    - title: Tests
+      regexp: "^test"
+      order: 5
+    - title: Build / CI
+      regexp: "^(build|ci)"
+      order: 6
+    - title: Other
+      order: 7
+
+# GitHub release notes sourced from CHANGELOG.md diff.
+release:
+  github:
+    owner: MrMirhan
+    name: a2migrate
+  prerelease: auto
+  name_template: "v{{ .Version }}"
+  header: |
+    ## a2migrate {{ .Version }}
+
+    Released {{ .CommitDate }}. Binary downloads below.
+  footer: |
+
+    ## Install
+
+    ```sh
+    curl -fsSL https://github.com/MrMirhan/a2migrate/releases/download/v{{ .Version }}/a2migrate_{{ .Os }}_{{ .Arch }}.tar.gz | tar -xz
+    sudo mv a2migrate /usr/local/bin/
+    a2migrate version
+    ```
+  format: tarball
+
+# brew tap configuration — uncomment to enable.
+# brews:
+#   - name: a2migrate
+#     repository:
+#       owner: MrMirhan
+#       name: homebrew-tap
+#     homepage: https://github.com/MrMirhan/a2migrate
+#     description: "Migrate AI coding session state between agents."
+#     goarm: "*"
+
+# scoop manifest configuration — uncomment to enable.
+# scoops:
+#   - name: a2migrate
+#     repository:
+#       owner: MrMirhan
+#       name: scoop-bucket
+
+source:
+  owner: MrMirhan
+  name: a2migrate
+  branch: main

@@ -5,6 +5,12 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+# Cancel a previous run of this workflow when a new push lands on main.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -20,35 +26,72 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
+          cache: true
       - name: Build
         run: go build ./...
-      - name: Test
+      - name: Test (race + cover)
         run: go test -race -coverprofile=coverage.txt ./...
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest' && matrix.go == '1.24'
         uses: actions/upload-artifact@v4
         with:
-          name: coverage
+          name: coverage-${{ matrix.os }}-${{ matrix.go }}
           path: coverage.txt
 
   vet:
-    name: vet
+    name: go vet
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-      - run: go vet ./...
+          cache: true
+      - name: go vet
+        run: go vet ./...
+
+  fmt:
+    name: gofmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check formatting
+        run: |
+          if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
+            echo "Files need gofmt:"
+            gofmt -l .
+            exit 1
+          fi
 
   lint:
     name: golangci-lint
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24'
+          cache: true
       - uses: golangci/golangci-lint-action@v6
         with:
           version: latest
+          args: --timeout=5m
+
+  build:
+    name: smoke build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+      - name: go build
+        run: go build -o a2migrate ./cmd/a2migrate
+      - name: version smoke test
+        run: ./a2migrate version
+      - name: help smoke test
+        run: ./a2migrate --help

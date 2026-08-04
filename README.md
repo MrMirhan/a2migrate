@@ -12,18 +12,43 @@ sides in lock-step over time. All three are idempotent.
 
 ## Install
 
+### Homebrew (macOS/Linux)
+
+```sh
+brew install MrMirhan/tap/a2migrate
+```
+
+### Download a binary
+
+Grab the latest release for your platform:
+[github.com/MrMirhan/a2migrate/releases/latest](https://github.com/MrMirhan/a2migrate/releases/latest)
+
+- macOS Apple Silicon: `a2migrate_Darwin_arm64.tar.gz`
+- macOS Intel: `a2migrate_Darwin_x86_64.tar.gz`
+- Linux arm64: `a2migrate_Linux_arm64.tar.gz`
+- Linux x86_64: `a2migrate_Linux_x86_64.tar.gz`
+- Windows: `a2migrate_Windows_x86_64.zip`
+
+```sh
+# Example: Linux x86_64
+curl -fsSL -o a2migrate.tar.gz \
+  https://github.com/MrMirhan/a2migrate/releases/latest/download/a2migrate_Linux_x86_64.tar.gz
+tar -xzf a2migrate.tar.gz
+sudo mv a2migrate /usr/local/bin/
+a2migrate version
+```
+
+### `go install`
+
 ```sh
 go install github.com/mirhan/a2migrate/cmd/a2migrate@latest
 ```
 
-Or download a binary from [GitHub Releases](#). macOS, Linux, Windows —
-no CGo, single static binary.
-
-Verify:
+### Verify
 
 ```sh
 a2migrate version
-# a2migrate dev (commit ..., built ..., linux/amd64, go1.24)
+# a2migrate v0.1.0 (commit ..., built ..., linux/amd64, go1.24)
 ```
 
 ## Quick start
@@ -213,3 +238,47 @@ internal/version/      build-time info
 ## License
 
 MIT. See [LICENSE](./LICENSE).
+
+## Release process
+
+Releases are cut by pushing a signed tag. CI does the rest.
+
+```sh
+# One-time per repo: ensure tag signing key is configured.
+git config --global user.signingkey <key-id>
+
+# Cut a release.
+make release TAG=v0.1.0
+# git tag -s v0.1.0 -m "Release v0.1.0"
+# git push origin v0.1.0
+```
+
+The `.github/workflows/release.yml` workflow then:
+
+1. Runs `goreleaser release --clean --skip=sign` on the tagged commit.
+2. Builds five targets (`linux/amd64`, `linux/arm64`,
+   `darwin/amd64`, `darwin/arm64`, `windows/amd64`).
+3. Generates `.tar.gz` / `.zip` archives plus a `.SHA256SUMS` file.
+4. Drafts a GitHub Release from the conventional commits in the diff.
+5. Attaches the binaries.
+
+Binaries appear at
+[github.com/MrMirhan/a2migrate/releases](https://github.com/MrMirhan/a2migrate/releases)
+within ~2 minutes of the tag push.
+
+To do a local dry-run of the release pipeline without publishing:
+
+```sh
+make snapshot       # builds to ./dist/
+make release-check  # validates .goreleaser.yaml
+```
+
+## Acknowledgements
+
+- The original Python migration script this Go implementation is built on
+  lives in [`senrecep/claude-code-to-opencode`](https://gist.github.com/senrecep/98d3583717581a4138bac62344261f6f)
+  and was reverse-engineered line by line into the four post-fix
+  invariants and the per-message SQL envelope.
+- The OpenCode [project docs](https://opencode.ai/) for the
+  SQLite schema, message JSON envelope, and the canonical file locations
+  for every artifact domain.
