@@ -65,11 +65,14 @@ support; naming some (`skills agents`) limits the run to those.
 
 ## Install
 
-### Homebrew (macOS/Linux)
+### Homebrew (macOS)
 
 ```sh
-brew install MrMirhan/tap/a2migrate
+brew install --cask MrMirhan/tap/a2migrate
 ```
+
+Homebrew casks are macOS-only. On Linux, use `go install` or a release
+tarball below.
 
 ### `go install`
 
