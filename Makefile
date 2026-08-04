@@ -1,4 +1,4 @@
-.PHONY: build test test-race lint clean install run snapshot release
+.PHONY: build test test-race lint clean install run snapshot release demo
 
 BIN := a2migrate
 PKG := ./cmd/a2migrate
@@ -31,6 +31,14 @@ run:
 cover:
 	go test -coverprofile=coverage.txt ./...
 	go tool cover -html=coverage.txt -o coverage.html
+
+# Record the README demo. Needs vhs, plus its ttyd and ffmpeg deps:
+#   go install github.com/charmbracelet/vhs@latest
+#   (Fedora) sudo dnf install ttyd ffmpeg
+# Builds a fresh binary first so the GIF never shows a stale one, and
+# puts it on PATH ahead of any installed copy.
+demo: build
+	PATH="$(CURDIR):$$PATH" vhs demo/demo.tape
 
 # Validate the GoReleaser configuration without building anything.
 # Useful as a CI gate before tagging a release.
