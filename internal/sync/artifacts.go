@@ -101,6 +101,13 @@ func SyncArtifactsAt(ccHome, ocHome string, direction Direction, dryRun bool) (*
 			r.Errors = append(r.Errors, err)
 		}
 	}
+	// Top-level instructions file (CLAUDE.md ↔ AGENTS.md) — file-level,
+	// not directory-level. Treat the file as its own basename.
+	ccSys := filepath.Join(ccHome, "CLAUDE.md")
+	ocSys := filepath.Join(ocHome, "AGENTS.md")
+	if _, err := reconcileOne(ccSys, ocSys, direction, dryRun, r); err != nil {
+		r.Errors = append(r.Errors, err)
+	}
 	return r, nil
 }
 
