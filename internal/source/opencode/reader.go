@@ -260,6 +260,9 @@ func buildMessage(id string, ts int64, blob string, parts []partRow) (domain.Mes
 	agent, _ := raw["agent"].(string)
 	model, _ := modelFromRaw(raw)
 	provider, _ := providerFromRaw(raw)
+	tokens := tokensFromOCRaw(raw)
+	cost := costFromOCRaw(raw)
+	finishedMs := completionFromOCRaw(raw)
 
 	msg := domain.Message{
 		ID:         id,
@@ -269,6 +272,9 @@ func buildMessage(id string, ts int64, blob string, parts []partRow) (domain.Mes
 		ModelID:    model,
 		ProviderID: provider,
 		CreatedAt:  millis(ts),
+		FinishedAt: finishedMs,
+		Tokens:     tokens,
+		CostUSD:    cost,
 	}
 
 	// Translate parts. Skip step-start / step-finish entirely.
@@ -330,6 +336,92 @@ func providerFromRaw(raw map[string]any) (string, bool) {
 		return v, true
 	}
 	return "", false
+}
+
+// tokensFromOCRaw pulls the OC tokens{} shape into domain.Tokens.
+// Returns the zero value if the source has no tokens block.
+func tokensFromOCRaw(raw map[string]any) domain.Tokens {
+	t, ok := raw["tokens"].(map[string]any)
+	if !ok {
+		return domain.Tokens{}
+	}
+	out := domain.Tokens{}
+	if v, ok := intFromAny(t["input"]); ok {
+		out.Input = v
+	}
+	if v, ok := intFromAny(t["output"]); ok {
+		out.Output = v
+	}
+	if v, ok := intFromAny(t["reasoning"]); ok {
+		out.Reasoning = v
+	}
+	if c, ok := t["cache"].(map[string]any); ok {
+		if v, ok := intFromAny(c["read"]); ok {
+			out.CacheRead = v
+		}
+		if v, ok := intFromAny(c["write"]); ok {
+			out.CacheWrite = v
+		}
+	}
+	if v, ok := raw["serviceTier"].(string); ok {
+		out.ServiceTier = v
+	}
+	if v, ok := raw["speed"].(string); ok {
+		out.Speed = v
+	}
+	return out
+}
+
+// costFromOCRaw extracts message.data.cost (always zero on CC→OC, may be
+// nonzero on OC native sessions that have cost-tracking enabled).
+func costFromOCRaw(raw map[string]any) float64 {
+	v, ok := raw["cost"]
+	if !ok {
+		return 0
+	}
+	switch x := v.(type) {
+	case float64:
+		return x
+	case float32:
+		return float64(x)
+	case int:
+		return float64(x)
+	case int64:
+		return float64(x)
+	}
+	return 0
+}
+
+// completionFromOCRaw extracts message.data.time.completed (OC only).
+func completionFromOCRaw(raw map[string]any) time.Time {
+	t, ok := raw["time"].(map[string]any)
+	if !ok {
+		return time.Time{}
+	}
+	if v, ok := intFromAny(t["completed"]); ok && v > 0 {
+		return millis(v)
+	}
+	return time.Time{}
+}
+
+// intFromAny decodes an int64 out of any numeric JSON value. Returns false
+// for nil, string, or unsupported types.
+func intFromAny(v any) (int64, bool) {
+	switch x := v.(type) {
+	case float64:
+		return int64(x), true
+	case int:
+		return int64(x), true
+	case int64:
+		return x, true
+	case json.Number:
+		i, err := x.Int64()
+		if err != nil {
+			return 0, false
+		}
+		return i, true
+	}
+	return 0, false
 }
 
 // toolPartFromOC renders an OC tool part back into a domain.Part tool entry.

@@ -132,17 +132,31 @@ func buildJSONL(sess domain.Session, sessionID string, parentOCID string) []byte
 			if len(content) == 0 {
 				continue
 			}
-			writeJSON(&b, map[string]any{
+			msgPayload := map[string]any{"role": "assistant", "content": content}
+			if !m.Tokens.IsZero() {
+				msgPayload["usage"] = tokensToUsage(m.Tokens)
+			}
+			entry := map[string]any{
 				"type":       "assistant",
 				"uuid":       msgID,
 				"parentUuid": pickParent(prevMsgID),
 				"sessionId":  sessionID,
 				"timestamp":  ts,
 				"cwd":        pickCWD(m, sess),
-				"message":    map[string]any{"role": "assistant", "content": content},
+				"message":    msgPayload,
 				"requestId":  generateMessageID(),
 				"userType":   "external",
-			})
+			}
+			if m.CostUSD > 0 {
+				entry["cost_usd"] = m.CostUSD
+			}
+			if m.FinishedAt.IsZero() == false {
+				entry["completedAt"] = formatTime(m.FinishedAt)
+			}
+			if m.ModelID != "" {
+				entry["model"] = m.ModelID
+			}
+			writeJSON(&b, entry)
 		default:
 			continue
 		}
@@ -183,6 +197,27 @@ func textFromUserParts(parts []domain.Part) string {
 		}
 	}
 	return strings.TrimRight(sb.String(), "\n")
+}
+
+// tokensToUsage renders an OC token block in the Anthropic-style usage
+// shape CC expects. The inverse of the parse-side FromUsage. We add a
+// `reasoning_tokens` slot because OC carries it; CC will silently
+// ignore it.
+func tokensToUsage(t domain.Tokens) map[string]any {
+	out := map[string]any{
+		"input_tokens":                t.Input,
+		"output_tokens":               t.Output,
+		"cache_creation_input_tokens": t.CacheWrite,
+		"cache_read_input_tokens":     t.CacheRead,
+		"reasoning_tokens":            t.Reasoning,
+	}
+	if t.ServiceTier != "" {
+		out["service_tier"] = t.ServiceTier
+	}
+	if t.Speed != "" {
+		out["speed"] = t.Speed
+	}
+	return out
 }
 
 func blocksFromAssistantParts(parts []domain.Part) []map[string]any {
