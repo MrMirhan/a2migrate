@@ -177,6 +177,67 @@ func newAllCmd() *cobra.Command {
 	return c
 }
 
+// newReverseCmd is the OC → CC counterpart to `all`. It walks the OC db,
+// writes JSONL sessions back to ~/.claude/projects/, and copies every
+// artifact domain back to its CC location.
+func newReverseCmd() *cobra.Command {
+	var (
+		dryRun, yes        bool
+		from, to, cwd      string
+		skipNative         bool
+		includes, excludes []string
+		search             string
+	)
+	c := &cobra.Command{
+		Use:   "reverse",
+		Short: "Migrate OpenCode state back to Claude Code (sessions + artifacts)",
+		Long:  "Reads opencode.db and writes JSONL sessions back into ~/.claude/projects/. Also copies OC artifacts (skills, commands, agents, rules, MCP) back to their CC locations.",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if !yes && !dryRun {
+				fmt.Fprintln(cmd.OutOrStdout(), "(use --yes to skip this confirmation)")
+			}
+			if err := runReverseArtifacts(cmd.Context(), dryRun, yes, cwd, cmd); err != nil {
+				return err
+			}
+			if err := runReverseMCP(cmd.Context(), dryRun, yes, resolveCCHome(to), cmd); err != nil {
+				return err
+			}
+			opts := migrate.ReverseOptions{
+				From:       resolveOCDB(from),
+				To:         resolveCCHome(to),
+				DryRun:     dryRun,
+				Yes:        yes,
+				Includes:   includes,
+				Excludes:   excludes,
+				Search:     search,
+				SkipNative: skipNative,
+			}
+			m := migrate.NewReverseMigrator(opts)
+			refs, err := m.Discover(cmd.Context())
+			if err != nil {
+				return err
+			}
+			report, err := m.Run(cmd.Context(), refs)
+			if err != nil {
+				return err
+			}
+			printReverseReport(cmd, report)
+			return nil
+		},
+	}
+	f := c.Flags()
+	f.BoolVar(&dryRun, "dry-run", false, "Plan only")
+	f.BoolVar(&yes, "yes", false, "Skip confirmation")
+	f.StringVar(&from, "from", "", "Override OpenCode database path")
+	f.StringVar(&to, "to", "", "Override Claude Code home")
+	f.StringVar(&cwd, "cwd", "", "Project root for project-scoped artifacts")
+	f.BoolVar(&skipNative, "skip-native", false, "Skip sessions not migrated from Claude Code")
+	f.StringSliceVar(&includes, "include", nil, "Only migrate sessions whose OC id matches")
+	f.StringSliceVar(&excludes, "exclude", nil, "Skip sessions whose OC id matches")
+	f.StringVar(&search, "search", "", "Substring filter on id or title")
+	return c
+}
+
 func runArtifacts(_ context.Context, m migrate.ArtifactsMigrator, cmd *cobra.Command) error {
 	rep, err := m.Migrate()
 	if err != nil {
