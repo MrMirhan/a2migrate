@@ -262,7 +262,7 @@ internal/version/      build-time info
 
 ## License
 
-MIT. See [LICENSE](./LICENSE).
+Apache-2.0. See [LICENSE](./LICENSE) for the full text.
 
 ## Contributing and releases
 
