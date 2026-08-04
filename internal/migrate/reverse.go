@@ -142,12 +142,16 @@ func (m *ReverseMigrator) Run(ctx context.Context, refs []opencode.SessionRef) (
 		}
 		if m.Options.DryRun {
 			mainOCIDByOrigin[r.OriginID] = r.OCSessionID
+			ccHome := m.Options.To
+			if ccHome == "" {
+				ccHome = platform.ClaudeCodeHome()
+			}
 			rep.Results = append(rep.Results, ReverseResult{
 				OCSessionID: r.OCSessionID,
 				OriginID:    r.OriginID,
 				Title:       r.Title,
 				ProjectDir:  r.Worktree,
-				OutputPath:  "would-write " + filepath.Join(claudecode.NewSessionWriter("").CCHome, "projects", platformEncode(r.Worktree), r.OriginID+".jsonl"),
+				OutputPath:  filepath.Join(ccHome, "projects", platformEncode(r.Worktree), r.OriginID+".jsonl"),
 			})
 			continue
 		}

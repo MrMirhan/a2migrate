@@ -55,6 +55,12 @@ func NewRootCmd(logger *slog.Logger) *cobra.Command {
 	root.AddCommand(newRulesCmd())
 	root.AddCommand(newMCPCmd())
 	root.AddCommand(newAllCmd())
+	root.AddCommand(newOCSessionsCmd())
+	root.AddCommand(newOCSkillsCmd())
+	root.AddCommand(newOCCommandsCmd())
+	root.AddCommand(newOCAgentsCmd())
+	root.AddCommand(newOCRulesCmd())
+	root.AddCommand(newOCMCPCmd())
 	root.AddCommand(newVersionCmd())
 
 	if logger == nil {

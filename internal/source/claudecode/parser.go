@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/mirhan/a2migrate/internal/domain"
+	"github.com/mirhan/a2migrate/internal/platform"
 )
 
 // EntryKind discriminates the type of a Claude Code JSONL record.
@@ -80,6 +81,7 @@ func (r *SessionReader) ParseSession(path string) (domain.Session, error) {
 	ref := SessionRef{
 		FilePath: path,
 		OriginID: origin,
+		Worktree: lookupWorktreeFromPath(path),
 	}
 	// Detect subagent files by path layout: <projects>/<enc>/<sid>/subagents/<file>
 	if strings.Contains(filepath.ToSlash(path), "/subagents/") {
@@ -92,6 +94,24 @@ func (r *SessionReader) ParseSession(path string) (domain.Session, error) {
 		}
 	}
 	return parseSessionStream(f, ref, slog.Default())
+}
+
+// lookupWorktreeFromPath derives the worktree from the parent project dir
+// segment of a JSONL file path. Path layout:
+//   ~/.claude/projects/<encoded>/<file>.jsonl
+//   ~/.claude/projects/<encoded>/<sid>/subagents/agent-<id>.jsonl
+func lookupWorktreeFromPath(path string) string {
+	slash := filepath.ToSlash(path)
+	parts := strings.Split(slash, "/projects/")
+	if len(parts) < 2 {
+		return ""
+	}
+	rest := parts[1]
+	segments := strings.Split(rest, "/")
+	if len(segments) == 0 {
+		return ""
+	}
+	return platform.DecodeCWD(segments[0])
 }
 
 func parseSessionStream(r io.Reader, ref SessionRef, logger *slog.Logger) (domain.Session, error) {

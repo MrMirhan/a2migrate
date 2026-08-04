@@ -71,7 +71,12 @@ func (w *SessionWriter) WriteSession(sess domain.Session, parentOriginID string)
 			return "", err
 		}
 		sessionID = parentDir
-		out = filepath.Join(subDir, "agent-"+origin+".jsonl")
+		// Don't double-prefix if origin already starts with "agent-".
+		filename := origin
+		if !strings.HasPrefix(filename, "agent-") {
+			filename = "agent-" + filename
+		}
+		out = filepath.Join(subDir, filename+".jsonl")
 	} else {
 		sessionID = origin
 		out = filepath.Join(dir, origin+".jsonl")
