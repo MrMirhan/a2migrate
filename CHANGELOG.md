@@ -10,6 +10,30 @@ is maintained by hand and ships inside the release archives.
 
 ## [Unreleased]
 
+### Added
+
+- `a2migrate export <tool> [domain...]` renders sessions and artifacts as
+  Markdown, JSON, HTML, or plain text. Sessions are picked interactively
+  unless `--search`, `--include`, `--exclude`, or `--all` narrows them
+  first. Without `--output` the document goes to stdout; with it, one
+  file is written per session plus one for the artifacts.
+
+### Changed
+
+- The `domain` types carry JSON tags, so the JSON export uses snake_case
+  keys instead of Go field names.
+
+### Fixed
+
+- `--search` matches the project path for Claude Code sessions. It used
+  to match the transcript filename, which is the session id itself, so
+  the flag was documented as searching paths but never did. Affects
+  `list`, `migrate`, and `export`.
+- The interactive picker detects a non-terminal instead of assuming one.
+  Its terminal check always returned true, so `select` in a pipe or a
+  redirect died inside the TUI with `error creating cancelreader`
+  instead of falling back with a message.
+
 ## [0.1.2] - 2026-08-04
 
 ### Fixed

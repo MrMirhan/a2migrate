@@ -66,6 +66,7 @@ func NewRootCmd(logger *slog.Logger) *cobra.Command {
 	root.AddCommand(newListCmd())
 	root.AddCommand(newShowCmd())
 	root.AddCommand(newSelectCmd())
+	root.AddCommand(newExportCmd())
 	root.AddCommand(newVerifyCmd())
 	root.AddCommand(newRepairCmd())
 	root.AddCommand(newSyncCmd())

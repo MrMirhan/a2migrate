@@ -6,10 +6,12 @@ package interactive
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/term"
 )
 
 // Item is one row in the picker.
@@ -131,8 +133,17 @@ func Run(items []Item, in io.Reader, out io.Writer) ([]Item, error) {
 	return m.Selected(), nil
 }
 
-func isatty(_ io.Reader) bool {
-	// Stub: real implementation reads from the terminal. For now assume
-	// stdin is a TTY; tests bypass this entry point.
-	return true
+// isatty reports whether in is an interactive terminal. Anything that
+// is not one — a pipe, a redirect, /dev/null, a test buffer — cannot be
+// prompted on, and launching the picker there fails deep inside the TUI
+// with an error the user cannot act on.
+//
+// The check is an ioctl, not a stat: /dev/null is a character device
+// too, so file mode alone would call it a terminal.
+func isatty(in io.Reader) bool {
+	f, ok := in.(*os.File)
+	if !ok {
+		return false
+	}
+	return term.IsTerminal(f.Fd())
 }

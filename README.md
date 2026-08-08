@@ -137,6 +137,29 @@ a2migrate version
 - **CLAUDE.md ↔ AGENTS.md** — the top-level system-prompt file that
   each tool injects into every session's context.
 
+### Export (one-shot, read-only)
+
+`a2migrate export` renders what a tool has on disk without writing into
+another tool. Pick a session interactively, or name one with `--search`
+/ `--include`, and get it back as **Markdown**, **JSON**, **HTML**, or
+**plain text**.
+
+```sh
+# Pick a session from a list, get Markdown on stdout.
+a2migrate export claude-code sessions > session.md
+
+# Every session from one project, as a standalone HTML page.
+a2migrate export cc sessions --search "works/api" --format html > sessions.html
+
+# Every session plus every artifact, one file each, into ./backup/.
+a2migrate export cc --all --format json -o ./backup
+```
+
+Markdown and HTML fold reasoning blocks and tool calls into collapsible
+sections, and print the model and token usage under each turn. JSON is
+the full `Session` structure, so it can be piped into `jq` or any other
+tool. Subagent transcripts come along when their parent is selected.
+
 ### Sync (continuous, reconcile semantics)
 
 - **mtime last-writer-wins** for file artifacts. Files on only one side
@@ -177,6 +200,10 @@ a2migrate
 ├── select  <tool>              interactive picker
 ├── verify  <tool>              what has been migrated in, and from where
 ├── repair  <tool>              re-run post-migration invariants
+│
+├── export  <tool> [domain...]  render sessions and artifacts to a file
+│     [--format md|json|html|txt] [--output dir] [--all]
+│     [--search] [--include] [--exclude] [--cwd] [--source-path]
 │
 ├── sync                     bidirectional CC↔OC reconciler
 │   ├── all                  artifacts + sessions in both directions

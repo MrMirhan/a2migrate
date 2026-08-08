@@ -13,7 +13,7 @@ import (
 // arguments is that this list stays constant as tools are added.
 func TestRoot_CommandSet(t *testing.T) {
 	want := []string{
-		"list", "migrate", "repair", "select", "show", "sync", "tools", "verify", "version",
+		"export", "list", "migrate", "repair", "select", "show", "sync", "tools", "verify", "version",
 	}
 	root := NewRootCmd(nil)
 	var got []string

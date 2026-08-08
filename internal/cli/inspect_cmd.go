@@ -128,7 +128,7 @@ func newListCmd() *cobra.Command {
 			return nil
 		},
 	}
-	c.Flags().StringVar(&search, "search", "", "Substring filter on session id, path, or title")
+	c.Flags().StringVar(&search, "search", "", "Substring filter on session id or project path (OpenCode also matches the title)")
 	return c
 }
 

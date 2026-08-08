@@ -27,42 +27,42 @@ const (
 
 // Session represents one chat session in either Claude Code or OpenCode form.
 type Session struct {
-	ID         string // OpenCode: "ses_<26b32>"; Claude Code: uuid filename
-	OriginID   string // original ID in source system (e.g. CC session UUID)
-	Origin     Origin
-	Title      string
-	Slug       string
-	ProjectDir string // absolute working directory the session was opened in
-	IsSubagent bool
-	ParentID   string // OriginID of parent session (only set when IsSubagent)
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	Messages   []Message
-	Tags       []string
+	ID         string    `json:"id"`                  // OpenCode: "ses_<26b32>"; Claude Code: uuid filename
+	OriginID   string    `json:"origin_id,omitempty"` // original ID in source system (e.g. CC session UUID)
+	Origin     Origin    `json:"origin"`
+	Title      string    `json:"title,omitempty"`
+	Slug       string    `json:"slug,omitempty"`
+	ProjectDir string    `json:"project_dir,omitempty"` // absolute working directory the session was opened in
+	IsSubagent bool      `json:"is_subagent,omitempty"`
+	ParentID   string    `json:"parent_id,omitempty"` // OriginID of parent session (only set when IsSubagent)
+	CreatedAt  time.Time `json:"created_at,omitzero"`
+	UpdatedAt  time.Time `json:"updated_at,omitzero"`
+	Messages   []Message `json:"messages,omitempty"`
+	Tags       []string  `json:"tags,omitempty"`
 }
 
 // Message is one turn envelope. Part content lives in []Part.
 type Message struct {
-	ID         string
-	OriginID   string
-	SessionID  string
-	ParentID   string // OriginID of predecessor message (or "")
-	Role       Role
-	CreatedAt  time.Time
-	FinishedAt time.Time // zero if not yet finished
-	Agent      string
-	ModelID    string
-	ProviderID string
-	Variant    string
+	ID         string    `json:"id"`
+	OriginID   string    `json:"origin_id,omitempty"`
+	SessionID  string    `json:"session_id,omitempty"`
+	ParentID   string    `json:"parent_id,omitempty"` // OriginID of predecessor message (or "")
+	Role       Role      `json:"role"`
+	CreatedAt  time.Time `json:"created_at,omitzero"`
+	FinishedAt time.Time `json:"finished_at,omitzero"` // zero if not yet finished
+	Agent      string    `json:"agent,omitempty"`
+	ModelID    string    `json:"model_id,omitempty"`
+	ProviderID string    `json:"provider_id,omitempty"`
+	Variant    string    `json:"variant,omitempty"`
 	// Tokens holds the per-message usage block. Populated from CC's
 	// message.usage on forward migration; populated from OC's
 	// message.data.tokens on reverse migration. Zero-value means
 	// "unknown / not preserved" — never fabricate.
-	Tokens Tokens
+	Tokens Tokens `json:"tokens,omitzero"`
 	// CostUSD is the OC-side cost figure. Always zero on forward
 	// migration (CC doesn't track cost). Preserved on reverse.
-	CostUSD float64
-	Parts   []Part
+	CostUSD float64 `json:"cost_usd,omitempty"`
+	Parts   []Part  `json:"parts,omitempty"`
 }
 
 // Tokens is the portable per-message usage shape. Both CC and OC carry
@@ -116,68 +116,68 @@ const (
 
 // Part is one typed chunk within a message.
 type Part struct {
-	ID         string
-	OriginID   string
-	Type       PartType
-	Text       string         // text / reasoning
-	ToolName   string         // tool parts
-	ToolCallID string         // tool parts
-	ToolInput  map[string]any // tool parts
-	ToolOutput string         // tool parts
-	ToolStatus string         // "pending" | "running" | "completed" | "error"
-	CreatedAt  time.Time
+	ID         string         `json:"id,omitempty"`
+	OriginID   string         `json:"origin_id,omitempty"`
+	Type       PartType       `json:"type"`
+	Text       string         `json:"text,omitempty"`         // text / reasoning
+	ToolName   string         `json:"tool_name,omitempty"`    // tool parts
+	ToolCallID string         `json:"tool_call_id,omitempty"` // tool parts
+	ToolInput  map[string]any `json:"tool_input,omitempty"`   // tool parts
+	ToolOutput string         `json:"tool_output,omitempty"`  // tool parts
+	ToolStatus string         `json:"tool_status,omitempty"`  // "pending" | "running" | "completed" | "error"
+	CreatedAt  time.Time      `json:"created_at,omitzero"`
 }
 
 // Skill is one Claude Code / OpenCode skill definition.
 type Skill struct {
-	Name        string
-	Description string
-	Origin      Origin
-	SourcePath  string // file on disk in source system
-	Body        string // markdown body (after frontmatter)
-	Frontmatter map[string]any
+	Name        string         `json:"name"`
+	Description string         `json:"description,omitempty"`
+	Origin      Origin         `json:"origin,omitempty"`
+	SourcePath  string         `json:"source_path,omitempty"` // file on disk in source system
+	Body        string         `json:"body,omitempty"`        // markdown body (after frontmatter)
+	Frontmatter map[string]any `json:"frontmatter,omitempty"`
 }
 
 // Command is one slash command (markdown + frontmatter).
 type Command struct {
-	Name         string
-	Description  string
-	ArgumentHint string
-	AllowedTools []string
-	SourcePath   string
-	Body         string
-	Frontmatter  map[string]any
+	Name         string         `json:"name"`
+	Description  string         `json:"description,omitempty"`
+	ArgumentHint string         `json:"argument_hint,omitempty"`
+	AllowedTools []string       `json:"allowed_tools,omitempty"`
+	SourcePath   string         `json:"source_path,omitempty"`
+	Body         string         `json:"body,omitempty"`
+	Frontmatter  map[string]any `json:"frontmatter,omitempty"`
 }
 
 // AgentDef is one subagent/agent definition.
 type AgentDef struct {
-	Name        string
-	Description string
-	Model       string
-	Tools       []string
-	SourcePath  string
-	Body        string
-	Frontmatter map[string]any
+	Name        string         `json:"name"`
+	Description string         `json:"description,omitempty"`
+	Model       string         `json:"model,omitempty"`
+	Tools       []string       `json:"tools,omitempty"`
+	SourcePath  string         `json:"source_path,omitempty"`
+	Body        string         `json:"body,omitempty"`
+	Frontmatter map[string]any `json:"frontmatter,omitempty"`
 }
 
 // Rule is one path-scoped or global rule.
 type Rule struct {
-	Name        string
-	Paths       []string
-	SourcePath  string
-	Body        string
-	Frontmatter map[string]any
+	Name        string         `json:"name"`
+	Paths       []string       `json:"paths,omitempty"`
+	SourcePath  string         `json:"source_path,omitempty"`
+	Body        string         `json:"body,omitempty"`
+	Frontmatter map[string]any `json:"frontmatter,omitempty"`
 }
 
 // MCPServer describes one MCP server entry.
 type MCPServer struct {
-	Name        string
-	Command     []string // normalized: executable + args
-	Environment map[string]string
-	Type        string // "local" | "remote"
-	Enabled     bool
-	URL         string // remote only
-	Headers     map[string]string
+	Name        string            `json:"name"`
+	Command     []string          `json:"command,omitempty"` // normalized: executable + args
+	Environment map[string]string `json:"environment,omitempty"`
+	Type        string            `json:"type,omitempty"` // "local" | "remote"
+	Enabled     bool              `json:"enabled"`
+	URL         string            `json:"url,omitempty"` // remote only
+	Headers     map[string]string `json:"headers,omitempty"`
 }
 
 // IsLocal returns true if the server runs as a local subprocess.
@@ -196,9 +196,9 @@ type Hook struct {
 // SystemPrompt is the top-level instructions file that a tool injects into
 // every session's context. CC: ~/.claude/CLAUDE.md. OC: ~/.config/opencode/AGENTS.md.
 type SystemPrompt struct {
-	Origin     Origin
-	SourcePath string
-	Body       string
+	Origin     Origin `json:"origin,omitempty"`
+	SourcePath string `json:"source_path,omitempty"`
+	Body       string `json:"body,omitempty"`
 }
 
 // Project represents one workspace root, shared by both systems.

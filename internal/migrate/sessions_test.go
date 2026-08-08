@@ -10,16 +10,31 @@ import (
 // These tests exercise the migrator wiring without touching real Claude Code
 // or OpenCode state. They use temp dirs and a sandbox CC home.
 
+// Claude Code names each transcript after the session uuid, so the
+// filename carries nothing the id does not. Search matches the id and
+// the worktree, which is what a user remembers a session by.
 func TestSessionMigrator_Selected_FilterSearch(t *testing.T) {
-	opts := Options{Search: "bug"}
-	m := NewSessionMigrator(opts)
 	refs := []claudecode.SessionRef{
-		{OriginID: "s1", FilePath: "/x/bug.jsonl"},
-		{OriginID: "s2", FilePath: "/x/other.jsonl"},
+		{OriginID: "s1", FilePath: "/p/s1.jsonl", Worktree: "/home/u/works/api"},
+		{OriginID: "s2", FilePath: "/p/s2.jsonl", Worktree: "/home/u/works/site"},
 	}
-	out := m.Selected(refs)
-	if len(out) != 1 || out[0].OriginID != "s1" {
-		t.Fatalf("selected = %v want [s1]", out)
+	tests := []struct {
+		name, search, want string
+	}{
+		{"by worktree", "api", "s1"},
+		{"by worktree, other side", "site", "s2"},
+		{"by id", "s2", "s2"},
+		{"case-insensitive", "API", "s1"},
+	}
+	for _, tt := range tests {
+		out := NewSessionMigrator(Options{Search: tt.search}).Selected(refs)
+		if len(out) != 1 || out[0].OriginID != tt.want {
+			t.Errorf("%s: search %q selected %v, want [%s]", tt.name, tt.search, out, tt.want)
+		}
+	}
+
+	if out := NewSessionMigrator(Options{Search: "nothing"}).Selected(refs); len(out) != 0 {
+		t.Errorf("a search matching nothing selected %v", out)
 	}
 }
 

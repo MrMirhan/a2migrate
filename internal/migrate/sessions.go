@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"path/filepath"
 	"sort"
 	"strings"
 
@@ -138,7 +137,10 @@ func (m *SessionMigrator) Selected(refs []claudecode.SessionRef) []claudecode.Se
 			continue
 		}
 		if search != "" {
-			hay := strings.ToLower(r.OriginID + " " + filepath.Base(r.FilePath))
+			// The filename is the session uuid, so matching it adds
+			// nothing over OriginID. The worktree is what a user
+			// actually remembers a session by.
+			hay := strings.ToLower(r.OriginID + " " + r.Worktree)
 			if !strings.Contains(hay, search) {
 				continue
 			}

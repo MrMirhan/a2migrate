@@ -39,7 +39,7 @@ func bindMigrateFlags(c *cobra.Command) *migrateFlags {
 	fl.StringSliceVar(&f.renames, "rename", nil, "Rename a session during migration (old=new), repeatable")
 	fl.StringSliceVar(&f.includes, "include", nil, "Only migrate sessions whose id matches")
 	fl.StringSliceVar(&f.excludes, "exclude", nil, "Skip sessions whose id matches")
-	fl.StringVar(&f.search, "search", "", "Substring filter on session id, path, or title")
+	fl.StringVar(&f.search, "search", "", "Substring filter on session id or project path (OpenCode also matches the title)")
 	fl.BoolVar(&f.skipRepair, "skip-repair", false, "Skip post-write invariants (OpenCode target only)")
 	fl.BoolVar(&f.skipNative, "skip-native", false, "Skip sessions that did not originate in the source tool")
 	return f
