@@ -10,6 +10,8 @@ is maintained by hand and ships inside the release archives.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-09
+
 ### Added
 
 - `a2migrate export <tool> [domain...]` renders sessions and artifacts as
