@@ -62,7 +62,7 @@ func dataDir() string {
 	case Windows:
 		return EnvOr("AppData", filepath.Join(Home(), "AppData", "Roaming"))
 	case Darwin:
-		return filepath.Join(Home(), "Library", "Application Support")
+		return EnvOr("XDG_DATA_HOME", filepath.Join(Home(), ".local", "share"))
 	default:
 		return EnvOr("XDG_DATA_HOME", filepath.Join(Home(), ".local", "share"))
 	}
@@ -74,7 +74,7 @@ func configDir() string {
 	case Windows:
 		return EnvOr("AppData", filepath.Join(Home(), "AppData", "Roaming"))
 	case Darwin:
-		return filepath.Join(Home(), "Library", "Preferences")
+		return EnvOr("XDG_CONFIG_HOME", filepath.Join(Home(), ".config"))
 	default:
 		return EnvOr("XDG_CONFIG_HOME", filepath.Join(Home(), ".config"))
 	}

@@ -10,6 +10,17 @@ is maintained by hand and ships inside the release archives.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-09
+
+### Fixed
+
+- Agent frontmatter writes `tools` as an object (`{"read": true}`) instead of
+  a flow-style array. OpenCode 1.18+ schema rejects the array form.
+- OpenCode data and config homes resolve to the XDG locations on macOS
+  (`~/.local/share/opencode` and `~/.config/opencode`). They used to point
+  at `~/Library/Application Support` and `~/Library/Preferences`, which
+  opencode never reads.
+
 ## [0.2.0] - 2026-08-09
 
 ### Added

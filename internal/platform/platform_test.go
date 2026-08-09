@@ -1,6 +1,7 @@
 package platform
 
 import (
+	"strings"
 	"os"
 	"path/filepath"
 	"testing"
@@ -43,6 +44,11 @@ func TestPaths(t *testing.T) {
 	}
 	if !filepath.IsAbs(OpenCodeDBPath()) && Current() != Windows {
 		t.Fatalf("OpenCodeDBPath %q not absolute", OpenCodeDBPath())
+	}
+	if Current() == Darwin {
+		if got := OpenCodeDBPath(); !strings.HasPrefix(got, filepath.Join(Home(), ".local", "share")) {
+			t.Fatalf("OpenCodeDBPath %q not under XDG data home", got)
+		}
 	}
 }
 

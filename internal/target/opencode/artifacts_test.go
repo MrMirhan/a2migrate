@@ -152,6 +152,9 @@ func TestAgentWriter_WriteGlobal(t *testing.T) {
 	if !strings.Contains(s, "model: \"anthropic/claude-opus\"") {
 		t.Fatalf("model missing: %s", s)
 	}
+	if !strings.Contains(s, "tools: {\"bash\":true,\"read\":true}") {
+		t.Fatalf("tools must be an object of enabled tools, got: %s", s)
+	}
 }
 
 func TestRuleWriter_WriteProject(t *testing.T) {

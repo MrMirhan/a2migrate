@@ -144,7 +144,11 @@ func (w *AgentWriter) writeDir(dir string, agents []domain.AgentDef, scope strin
 			fm["model"] = a.Model
 		}
 		if len(a.Tools) > 0 {
-			fm["tools"] = a.Tools
+			tools := make(map[string]bool, len(a.Tools))
+			for _, t := range a.Tools {
+				tools[t] = true
+			}
+			fm["tools"] = tools
 		}
 		return fm
 	})
