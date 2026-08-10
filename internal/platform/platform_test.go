@@ -1,9 +1,9 @@
 package platform
 
 import (
-	"strings"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 

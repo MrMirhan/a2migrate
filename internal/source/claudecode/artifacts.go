@@ -217,18 +217,31 @@ type mcpServerRaw struct {
 	Headers map[string]any `json:"headers"`
 }
 
-// ReadGlobalMCP reads ~/.claude/mcp.json and normalizes it to domain.MCPServer.
-// Returns nil if the file is missing.
+// ReadGlobalMCP reads the user-level MCP servers from ~/.claude.json (where
+// Claude Code stores them today) with a fallback to the legacy
+// ~/.claude/mcp.json, and normalizes them to domain.MCPServer.
+// Returns nil if neither file exists.
 func ReadGlobalMCP() ([]domain.MCPServer, error) {
-	path := platform.ClaudeCodeMCPPath()
-	data, err := os.ReadFile(path)
-	if errors.Is(err, os.ErrNotExist) {
-		return nil, nil
+	for _, path := range []string{
+		platform.ClaudeCodeUserConfigPath(),
+		platform.ClaudeCodeMCPPath(),
+	} {
+		data, err := os.ReadFile(path)
+		if errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return nil, fmt.Errorf("read %s: %w", path, err)
+		}
+		servers, err := ParseMCPServers(data)
+		if err != nil {
+			return nil, err
+		}
+		if len(servers) > 0 {
+			return servers, nil
+		}
 	}
-	if err != nil {
-		return nil, fmt.Errorf("read %s: %w", path, err)
-	}
-	return ParseMCPServers(data)
+	return nil, nil
 }
 
 // ReadGlobalSystemPrompt reads ~/.claude/CLAUDE.md, the top-level

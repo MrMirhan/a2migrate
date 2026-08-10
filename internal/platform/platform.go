@@ -156,9 +156,15 @@ func ClaudeCodeSettingsPath() string {
 	return filepath.Join(ClaudeCodeHome(), "settings.json")
 }
 
-// ClaudeCodeMCPPath returns the global mcp.json file.
+// ClaudeCodeMCPPath returns the legacy global mcp.json file.
 func ClaudeCodeMCPPath() string {
 	return filepath.Join(ClaudeCodeHome(), "mcp.json")
+}
+
+// ClaudeCodeUserConfigPath returns Claude Code's global user config file,
+// which holds the user-level MCP servers (~/.claude.json).
+func ClaudeCodeUserConfigPath() string {
+	return filepath.Join(filepath.Dir(ClaudeCodeHome()), ".claude.json")
 }
 
 // EncodeCWD converts an absolute path into Claude Code's encoded-cwd form.
