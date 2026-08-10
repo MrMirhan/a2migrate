@@ -10,6 +10,18 @@ is maintained by hand and ships inside the release archives.
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-08-10
+
+### Fixed
+
+- Global MCP servers are read from `~/.claude.json`, where Claude Code
+  stores them today, with the legacy `~/.claude/mcp.json` as a fallback.
+  They used to be read only from `mcp.json`, so a normal install looked
+  empty.
+- MCP server kinds are mapped to the OpenCode schema (`stdio`/`http`/`sse`
+  become `local`/`remote`). OpenCode 1.18+ rejects any other value, which
+  silently dropped every non-`local` server from the merged config.
+
 ## [0.2.1] - 2026-08-09
 
 ### Fixed

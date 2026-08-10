@@ -375,8 +375,12 @@ func marshalOC(v any) ([]byte, error) {
 
 // serverToOC renders a domain.MCPServer as the OC "mcp" sub-document shape.
 func serverToOC(s domain.MCPServer) map[string]any {
+	kind := "local"
+	if s.URL != "" {
+		kind = "remote"
+	}
 	out := map[string]any{
-		"type":    s.Type,
+		"type":    kind,
 		"command": s.Command,
 		"enabled": s.Enabled,
 	}

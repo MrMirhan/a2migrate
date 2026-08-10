@@ -261,3 +261,33 @@ func TestServerToOC_Remote(t *testing.T) {
 		t.Fatalf("type = %v", out["type"])
 	}
 }
+
+func TestMCPConfigWriter_Apply_MapsCCKinds(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "opencode.json")
+	w := &MCPConfigWriter{Path: path}
+	patch := MCPConfigPatch{
+		Servers: []domain.MCPServer{
+			{Name: "blitz", Type: "stdio", Enabled: true, Command: []string{"ssh", "npx"}},
+			{Name: "exa", Type: "http", Enabled: true, URL: "https://mcp.exa.ai/mcp"},
+		},
+	}
+	if _, err := w.Apply(patch); err != nil {
+		t.Fatal(err)
+	}
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var root map[string]any
+	if err := json.Unmarshal(body, &root); err != nil {
+		t.Fatal(err)
+	}
+	mcp := root["mcp"].(map[string]any)
+	if got := mcp["blitz"].(map[string]any)["type"]; got != "local" {
+		t.Fatalf("stdio kind = %v, want local", got)
+	}
+	if got := mcp["exa"].(map[string]any)["type"]; got != "remote" {
+		t.Fatalf("http kind = %v, want remote", got)
+	}
+}
