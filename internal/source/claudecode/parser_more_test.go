@@ -161,6 +161,28 @@ func TestParseEntry_UnknownType(t *testing.T) {
 	}
 }
 
+// TestParseSession_SubagentPathLayout verifies that parsing a file inside
+// <projects>/<enc>/<sid>/subagents/<file>.jsonl marks IsSubagent and extracts
+// the parent session ID on all platforms (including Windows backslashes).
+func TestParseSession_SubagentPathLayout(t *testing.T) {
+	src := `{"type":"user","uuid":"u1","parentUuid":null,"sessionId":"parent-123","timestamp":"2026-07-20T10:00:00Z","cwd":"/p","message":{"role":"user","content":"subagent task"}}` + "\n"
+	dir := filepath.Join(t.TempDir(), "projects", "-tmp-proj", "parent-123", "subagents")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	path := writeJSONLFile(t, dir, "agent-abc.jsonl", src)
+	sess, err := NewSessionReader("").ParseSession(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !sess.IsSubagent {
+		t.Fatal("expected IsSubagent = true")
+	}
+	if sess.ParentID != "parent-123" {
+		t.Fatalf("ParentID = %q, want parent-123", sess.ParentID)
+	}
+}
+
 // Helper: write body to dir/file.jsonl and return the path.
 func writeJSONLFile(t *testing.T, dir, name, body string) string {
 	t.Helper()

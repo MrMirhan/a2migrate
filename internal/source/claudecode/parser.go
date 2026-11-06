@@ -148,13 +148,13 @@ func (r *SessionReader) ParseSession(path string) (domain.Session, error) {
 		Worktree: lookupWorktreeFromPath(path),
 	}
 	// Detect subagent files by path layout: <projects>/<enc>/<sid>/subagents/<file>
-	if strings.Contains(filepath.ToSlash(path), "/subagents/") {
+	slashPath := filepath.ToSlash(path)
+	if strings.Contains(slashPath, "/subagents/") {
 		ref.IsSubagent = true
-		dir := filepath.Dir(filepath.ToSlash(path))
-		// dir is .../<sid>/subagents — parent basename is the sid
-		parts := strings.Split(dir, "/")
-		if len(parts) >= 1 {
-			ref.ParentID = parts[len(parts)-2]
+		// slashPath is .../<sid>/subagents/<file> — parent of subagents is the sid
+		parts := strings.Split(slashPath, "/")
+		if len(parts) >= 3 {
+			ref.ParentID = parts[len(parts)-3]
 		}
 	}
 	return parseSessionStream(f, ref, slog.Default())
